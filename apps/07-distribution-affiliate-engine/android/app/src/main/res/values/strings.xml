@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Distribution Affiliate Engine</string>
+    <string name="title_activity_main">Distribution Affiliate Engine</string>
+    <string name="package_name">com.aurelia.os.affiliate</string>
+    <string name="custom_url_scheme">com.aurelia.os.affiliate</string>
+</resources>

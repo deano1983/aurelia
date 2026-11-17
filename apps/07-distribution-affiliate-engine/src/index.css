@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --affiliate-dark: 11 31 58;
+    --affiliate-emerald: 16 185 129;
+    --affiliate-surface: 248 250 252;
+  }
+
+  body {
+    @apply bg-affiliate-surface text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}

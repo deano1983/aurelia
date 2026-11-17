@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --timeline-dark: 11 31 58;
+    --timeline-primary: 29 78 216;
+    --timeline-accent: 34 211 238;
+  }
+
+  body {
+    @apply bg-timeline-surface text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}

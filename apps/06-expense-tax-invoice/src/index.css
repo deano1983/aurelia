@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --expense-dark: 11 31 58;
+    --expense-primary: 29 78 216;
+    --expense-accent: 34 211 238;
+  }
+
+  body {
+    @apply bg-expense-surface text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}

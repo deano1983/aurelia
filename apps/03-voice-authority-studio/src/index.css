@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --voice-dark: 30 27 75;
+    --voice-primary: 91 33 182;
+    --voice-accent: 139 92 246;
+  }
+
+  body {
+    @apply bg-voice-surface text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .voice-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .voice-btn-primary {
+    @apply voice-btn bg-voice-primary text-white shadow-lg shadow-voice-primary/30 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-voice-accent focus:ring-offset-2;
+  }
+  .voice-btn-outline {
+    @apply voice-btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus-ring-voice-primary/20;
+  }
+  .voice-card {
+    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-voice-primary/30;
+  }
+}

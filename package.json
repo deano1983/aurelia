@@ -1,0 +1,12 @@
+{
+  "name": "aurelia",
+  "private": true,
+  "description": "Aurelia OS: the central hub and its seven apps, in one workspace",
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:site": "node scripts/assemble.mjs",
+    "dev:hub": "npm run dev -w central-hub"
+  }
+}

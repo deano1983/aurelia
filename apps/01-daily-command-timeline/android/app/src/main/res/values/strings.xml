@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Daily Command Timeline</string>
+    <string name="title_activity_main">Daily Command Timeline</string>
+    <string name="package_name">com.aurelia.os.timeline</string>
+    <string name="custom_url_scheme">com.aurelia.os.timeline</string>
+</resources>
