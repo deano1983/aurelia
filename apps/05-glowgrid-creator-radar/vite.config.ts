@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: process.env.AURELIA_ASSEMBLE ? '/apps/05-glowgrid-creator-radar/' : '/',
+  // VITE_SUPABASE_* live in the repo-root .env.local, shared by all eight apps.
+  envDir: '../..',
   plugins: [
     react(),
     VitePWA({
