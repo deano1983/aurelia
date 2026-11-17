@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { APPS } from './data'
 import { SessionProvider, useSession } from './components/SessionProvider'
 import { Header } from './components/Header'
+import { ProfileEditor, RoomLockPanel } from './components/LoginPanel'
 import { AppCard } from './components/AppCard'
 import { DeepLinkHandler } from './components/DeepLinkHandler'
 import { DownloadCenter } from './components/DownloadCenter'
@@ -18,14 +19,14 @@ function AppShell() {
     }
   }, [])
 
-  const { session, logout } = useSession()
+  const { user, signOut } = useSession()
 
-  if (!session) return null
+  if (!user) return null
 
   if (activeSection === 'deep-link' && deepLinkTarget) {
     return (
       <div className="min-h-screen bg-aurelia-surface">
-        <Header session={session} onLogout={logout} />
+        <Header user={user} onSignOut={signOut} />
         <DeepLinkHandler target={deepLinkTarget} onBack={() => { setActiveSection('dashboard'); setDeepLinkTarget(null); window.location.hash = '' } } />
       </div>
     )
@@ -34,7 +35,7 @@ function AppShell() {
   if (activeSection === 'download') {
     return (
       <div className="min-h-screen bg-aurelia-surface">
-        <Header session={session} onLogout={logout} />
+        <Header user={user} onSignOut={signOut} />
         <DownloadCenter />
       </div>
     )
@@ -42,7 +43,7 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-aurelia-surface">
-      <Header session={session} onLogout={logout} />
+      <Header user={user} onSignOut={signOut} />
       <main className="px-6 py-8 max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1">
@@ -50,7 +51,7 @@ function AppShell() {
               <div>
                 <h2 className="text-2xl font-bold text-aurelia-dark">Command Center</h2>
                 <p className="text-slate-600">
-                  Select an app to open. All apps share your session and passphrase.
+                  Select an app to open. All apps share your sign-in.
                 </p>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200">
@@ -81,20 +82,14 @@ function AppShell() {
           <div className="lg:w-80 flex-shrink-0">
             <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 sticky top-24">
               <h3 className="font-bold text-aurelia-dark mb-4 flex items-center gap-2">
-                👤 {session.name}
+                👤 {user.name}
               </h3>
               <div className="mb-6">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Role</p>
-                <p className="text-sm text-slate-700">{session.role}</p>
+                <ProfileEditor />
               </div>
               <div className="mb-6">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Shared Passphrase</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">
-                    {session.passphrase ? session.passphrase.replace(/./g, '•') : '—'}
-                  </span>
-                  <span className="text-[10px] text-slate-400">never stored</span>
-                </div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Room key</p>
+                <RoomLockPanel />
               </div>
               <div className="pt-4 border-t border-slate-100">
                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Cross-App Flows</p>
