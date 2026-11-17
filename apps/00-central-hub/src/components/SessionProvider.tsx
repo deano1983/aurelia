@@ -1,61 +1,32 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { type ReactNode } from 'react'
+import { AureliaAuthProvider, NotConfiguredPanel, clearLegacySession, useSession } from '@aurelia/core/auth'
 import { LoginPanel } from './LoginPanel'
-import type { UserSession } from '../types'
 
-const SessionContext = createContext<{
-  session: UserSession | null
-  login: (name: string, role: string, passphrase: string) => void
-  logout: () => void
-} | null>(null)
+// The old hub stored { name, role, passphrase } in plain text under
+// localStorage "aurelia_session". Remove it as soon as the hub loads.
+clearLegacySession()
 
+/** Hub gate: Supabase sign-in, shared with all apps on this origin. */
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<UserSession | null>(null)
-
-  useEffect(() => {
-    const saved = localStorage.getItem('aurelia_session')
-    if (saved) {
-      try {
-        setSession(JSON.parse(saved))
-      } catch {
-        // ignore corrupt storage
-      }
-    }
-  }, [])
-
-  const saveSession = (next: UserSession) => {
-    localStorage.setItem('aurelia_session', JSON.stringify(next))
-    setSession(next)
-  }
-
-  const login = (name: string, role: string, passphrase: string) => {
-    const next: UserSession = {
-      name,
-      role,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1d4ed8&color=fff`,
-      passphrase,
-      isAuthenticated: true,
-    }
-    saveSession(next)
-  }
-
-  const logout = () => {
-    localStorage.removeItem('aurelia_session')
-    setSession(null)
-  }
-
   return (
-    <SessionContext.Provider value={{ session, login, logout }}>
-      {session ? children : <LoginPanelShell onLogin={login} />}
-    </SessionContext.Provider>
+    <AureliaAuthProvider>
+      <SessionGate>{children}</SessionGate>
+    </AureliaAuthProvider>
   )
 }
 
-function LoginPanelShell({ onLogin }: { onLogin: (n: string, r: string, p: string) => void }) {
-  return <LoginPanel onLogin={onLogin} />
+function SessionGate({ children }: { children: ReactNode }) {
+  const { status, configured } = useSession()
+  if (!configured) return <NotConfiguredPanel />
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-aurelia-dark text-slate-300 text-sm">
+        Checking your session…
+      </div>
+    )
+  }
+  if (status === 'signed_out') return <LoginPanel />
+  return <>{children}</>
 }
 
-export const useSession = () => {
-  const ctx = useContext(SessionContext)
-  if (!ctx) throw new Error('useSession must be used within SessionProvider')
-  return ctx
-}
+export { useSession }
