@@ -92,6 +92,7 @@ export function parseInboundDeepLink(hash: string = window.location.hash): Inbou
   for (const [key, value] of Object.entries(raw)) {
     const max = INBOUND_FIELDS[key]
     if (!max) continue
+    // eslint-disable-next-line no-control-regex -- intentional: strips control characters from untrusted input
     const clean = value.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, '').trim().slice(0, max)
     if (clean) payload[key] = clean
   }

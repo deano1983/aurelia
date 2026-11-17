@@ -22,6 +22,7 @@ export const MAX_DESC = 2000
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 const DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})T(([01]\d|2[0-3]):[0-5]\d)(:[0-5]\d(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?$/
 /** Control characters other than \n (CR, NUL, ESC, DEL, …): never accepted from a link. */
+// eslint-disable-next-line no-control-regex -- intentional: strips control characters from untrusted input
 const CONTROL_RE = /[\u0000-\u0009\u000B-\u001F\u007F]/
 const APP_ID_RE = /^0[0-7]$/
 

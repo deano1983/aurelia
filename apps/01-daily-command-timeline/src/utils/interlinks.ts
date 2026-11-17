@@ -49,6 +49,7 @@ function splitDue(due: string): { dueDate: string; dueTime?: string } {
 
 /** Bus text is untrusted too: drop control characters and cap the length. */
 function cleanText(value: string, max: number): string {
+  // eslint-disable-next-line no-control-regex -- intentional: strips control characters from untrusted input
   return value.replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, max)
 }
 

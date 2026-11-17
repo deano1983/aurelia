@@ -9,6 +9,7 @@ import type { TimelineItem } from '../types'
 export function escapeIcsText(text: string): string {
   return String(text)
     .replace(/\r\n?|[\n\u2028\u2029\u0085]/g, '\n')
+    // eslint-disable-next-line no-control-regex -- intentional: strips control characters from untrusted input
     .replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, '')
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
