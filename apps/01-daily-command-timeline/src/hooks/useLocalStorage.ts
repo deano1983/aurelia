@@ -14,6 +14,18 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       // Keep initial value if storage is corrupted or unavailable.
     }
     setHydrated(true)
+    // Keep several open tabs of this app in step: another tab (or an event the
+    // other tab handled) may have written the same key.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== key || event.newValue === null) return
+      try {
+        setValue(JSON.parse(event.newValue) as T)
+      } catch {
+        // Ignore malformed writes.
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [key])
 
   const set = useCallback(

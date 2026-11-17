@@ -6,17 +6,27 @@ import { ProfileEditor, RoomLockPanel } from './components/LoginPanel'
 import { AppCard } from './components/AppCard'
 import { DeepLinkHandler } from './components/DeepLinkHandler'
 import { DownloadCenter } from './components/DownloadCenter'
+import { ActivityFeed } from './components/ActivityFeed'
+import { hubDeepLinkTarget } from './utils/interlinks'
+import { UpdateBanner } from '@aurelia/core/events'
 
 function AppShell() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'deep-link' | 'download'>('dashboard')
   const [deepLinkTarget, setDeepLinkTarget] = useState<string | null>(null)
 
   useEffect(() => {
-    const hash = window.location.hash
-    if (hash.startsWith('#ctl=') || hash.startsWith('#vault=')) {
-      setActiveSection('deep-link')
-      setDeepLinkTarget(hash.slice(1))
+    // Any deep link meant for an app (#ctl=, #vault=, #timeline/add?…, …) is routed there,
+    // whether it was in the URL at load or pasted while the hub is open.
+    const check = () => {
+      const hash = window.location.hash
+      if (hubDeepLinkTarget(hash)) {
+        setActiveSection('deep-link')
+        setDeepLinkTarget(hash.slice(1))
+      }
     }
+    check()
+    window.addEventListener('hashchange', check)
+    return () => window.removeEventListener('hashchange', check)
   }, [])
 
   const { user, signOut } = useSession()
@@ -109,9 +119,13 @@ function AppShell() {
                 </ul>
               </div>
             </div>
+            <div className="mt-6">
+              <ActivityFeed />
+            </div>
           </div>
         </div>
       </main>
+      <UpdateBanner />
     </div>
   )
 }

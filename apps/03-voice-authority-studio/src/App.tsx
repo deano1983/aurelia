@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import type { Audience, Draft, ProofPointer, VoiceStyle } from './types'
 import { generateDrafts } from './drafts/generateDrafts'
 import { buildCtlLink } from './utils/ctlLink'
+import { UpdateBanner } from '@aurelia/core/events'
+import { announceDraftsReady } from './utils/interlinks'
 import { VoiceRecorder } from './components/VoiceRecorder'
 import { DraftCards } from './components/DraftCards'
 import { StyleSelector } from './components/StyleSelector'
@@ -39,6 +41,7 @@ export default function App() {
       const edited = nextDrafts.map((d) => ({ ...d }))
       setDrafts(edited)
       setSelectedId(edited[0]?.id ?? null)
+      announceDraftsReady(edited, audience)
       setStatus('drafts')
     },
     [audience],
@@ -301,6 +304,7 @@ export default function App() {
           </div>
         </footer>
       </main>
+      <UpdateBanner />
     </div>
   )
 }

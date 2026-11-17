@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
+import { emit } from '@aurelia/core/events'
 import { AureliaAuthProvider, NotConfiguredPanel, clearLegacySession, useSession } from '@aurelia/core/auth'
 import { LoginPanel } from './LoginPanel'
 
@@ -17,6 +18,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 function SessionGate({ children }: { children: ReactNode }) {
   const { status, configured } = useSession()
+  // Tell the other apps when the hub signs in or out (status only, never tokens).
+  const last = useRef<string | null>(null)
+  useEffect(() => {
+    if (status === 'loading' || last.current === status) return
+    if (last.current !== null) emit('hub.session_changed', { status }, { source: '00' })
+    last.current = status
+  }, [status])
   if (!configured) return <NotConfiguredPanel />
   if (status === 'loading') {
     return (

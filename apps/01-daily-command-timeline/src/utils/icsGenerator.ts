@@ -1,36 +1,56 @@
 import type { TimelineItem } from '../types'
 
-function escapeIcsText(text: string): string {
-  return text
+/**
+ * RFC 5545 §3.3.11 TEXT escaping. Line breaks of any kind (CRLF, CR, LF, and the
+ * Unicode line/paragraph separators) become the literal two characters "\n";
+ * every other control character is dropped. The result can never contain a raw
+ * CR or LF, so a value cannot start a new property (VALARM, ATTENDEE, URL, …).
+ */
+export function escapeIcsText(text: string): string {
+  return String(text)
+    .replace(/\r\n?|[\n\u2028\u2029\u0085]/g, '\n')
+    .replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, '')
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
     .replace(/\n/g, '\\n')
 }
 
-function foldLine(line: string): string {
+/** Fold to 75 octets per line (RFC 5545 §3.1) without splitting a UTF-8 character. */
+export function foldLine(line: string): string {
   const encoder = new TextEncoder()
-  const bytes = encoder.encode(line)
-  if (bytes.length <= 75) return line
   const chunks: string[] = []
-  let offset = 0
-  while (offset < bytes.length) {
-    chunks.push(new TextDecoder().decode(bytes.slice(offset, offset + 75)))
-    offset += 75
+  let current = ''
+  let bytes = 0
+  for (const ch of line) {
+    const size = encoder.encode(ch).length
+    const limit = chunks.length === 0 ? 75 : 74 // continuation lines start with a space
+    if (bytes + size > limit) {
+      chunks.push(current)
+      current = ''
+      bytes = 0
+    }
+    current += ch
+    bytes += size
   }
+  chunks.push(current)
   return chunks.map((chunk, index) => (index === 0 ? chunk : ` ${chunk}`)).join('\r\n')
 }
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
 function formatIcsDate(isoDate: string): string {
   return isoDate.replace(/-/g, '')
 }
 
-function formatIcsDateTime(isoDate: string, time?: string): string {
-  const datePart = formatIcsDate(isoDate)
-  if (!time) return datePart
-  const [hours, minutes] = time.split(':')
-  const seconds = '00'
-  return `${datePart}T${hours}${minutes}${seconds}`
+function formatUtcStamp(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+}
+
+/** Only identifier-safe characters in UIDs and X- property values. */
+function safeToken(value: string): string {
+  return value.replace(/[^A-Za-z0-9._@-]/g, '')
 }
 
 export function generateIcs(items: TimelineItem[]): string {
@@ -44,15 +64,22 @@ export function generateIcs(items: TimelineItem[]): string {
   lines.push('X-WR-CALNAME:Aurelia OS — Daily Command Timeline')
   lines.push('X-WR-TIMEZONE:Australia/Sydney')
 
-  const dtStamp = formatIcsDateTime(new Date().toISOString())
+  const dtStamp = formatUtcStamp(new Date())
 
   for (const item of items) {
+    // Stored data can be tampered with (same-origin writers), so dates are
+    // re-validated here and an item with a malformed date is skipped.
+    if (!DATE_RE.test(item.dueDate)) continue
+    const time = item.dueTime && TIME_RE.test(item.dueTime) ? item.dueTime : undefined
     lines.push('BEGIN:VEVENT')
-    lines.push(`UID:${item.id}@aurelia-os.timeline`)
+    lines.push(`UID:${safeToken(item.id)}@aurelia-os.timeline`)
     lines.push(`DTSTAMP:${dtStamp}`)
-    lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(item.dueDate)}`)
-    if (item.dueTime) {
-      lines.push(`DTEND;VALUE=DATE:${formatIcsDate(item.dueDate)}`)
+    if (time) {
+      const stamp = `${formatIcsDate(item.dueDate)}T${time.replace(':', '')}00`
+      lines.push(`DTSTART:${stamp}`)
+      lines.push(`DTEND:${stamp}`)
+    } else {
+      lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(item.dueDate)}`)
     }
     lines.push(`SUMMARY:${escapeIcsText(item.title)}`)
     if (item.description) {
@@ -60,7 +87,7 @@ export function generateIcs(items: TimelineItem[]): string {
     }
     lines.push(`CATEGORIES:${escapeIcsText(item.category)}`)
     if (item.tags.length) {
-      lines.push(`X-AURELIA-TAGS:${escapeIcsText(item.tags.join(', '))}`)
+      lines.push(`X-AURELIA-TAGS:${item.tags.map(escapeIcsText).join(',')}`)
     }
     if (item.sourceApp) {
       lines.push(`X-AURELIA-SOURCE:${escapeIcsText(item.sourceApp)}`)

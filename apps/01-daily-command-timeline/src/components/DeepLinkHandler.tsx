@@ -17,7 +17,7 @@ export function DeepLinkHandler({ deadline, onAdd, onDismiss }: DeepLinkHandlerP
           <h2 className="text-xl font-bold text-timeline-dark">Incoming Deadline</h2>
         </div>
         <p className="text-slate-600 mb-6">
-          A deadline was shared from another Aurelia OS app. Add it to your timeline?
+          A deadline was shared with you by link. Links are unverified (anyone can make one), so check the details before adding it.
         </p>
         <div className="space-y-3">
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">

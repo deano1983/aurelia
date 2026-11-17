@@ -44,7 +44,7 @@ export interface PitchHistory {
   copiedAt: string
 }
 
-export type DeepLinkSource = '04' | '05' | '06'
+export type DeepLinkSource = '03' | '04' | '05' | '06'
 
 export type DeepLinkKind = 'linkedin-draft' | 'rate-card' | 'tier-attribution'
 
@@ -52,4 +52,17 @@ export interface InboundDeepLink {
   kind: DeepLinkKind
   source: DeepLinkSource
   payload: Record<string, string>
+  /**
+   * Where it came from. Both are unverified (not signed): 'link' is a URL anyone
+   * can send; 'bus' is a same-origin event from another Aurelia app. Nothing is
+   * applied to pitches until the user clicks Apply.
+   */
+  trust: 'link' | 'bus'
+}
+
+/** An inbound payload filed from the event bus, waiting to be applied or dismissed. */
+export interface InboxEntry extends InboundDeepLink {
+  /** Event id (dedupe key). */
+  id: string
+  receivedAt: string
 }
