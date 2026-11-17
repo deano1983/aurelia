@@ -1,9 +1,13 @@
+@import '@aurelia/tokens/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* This app's accent; see @aurelia/tokens/tokens.css */
+    --aurelia-accent: var(--aurelia-accent-pink);
     --radius: 0.75rem;
   }
   body {

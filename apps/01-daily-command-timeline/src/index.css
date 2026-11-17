@@ -1,16 +1,17 @@
+@import '@aurelia/tokens/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --timeline-dark: 11 31 58;
-    --timeline-primary: 29 78 216;
-    --timeline-accent: 34 211 238;
+    /* This app's accent; see @aurelia/tokens/tokens.css */
+    --aurelia-accent: var(--aurelia-accent-cyan);
   }
 
   body {
-    @apply bg-timeline-surface text-slate-900 antialiased;
+    @apply bg-timeline-surface text-aurelia-ink antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 }

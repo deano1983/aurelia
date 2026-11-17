@@ -1,5 +1,9 @@
+import aurelia from '@aurelia/tokens'
+import { appColors } from '@aurelia/tokens/palette'
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  presets: [aurelia],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,12 +11,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        voice: {
+        // Legacy alias: voice-* keeps the studio's violet scale; voice-accent
+        // follows --aurelia-accent (violet for this app, see src/index.css).
+        voice: appColors({
           dark: '#1e1b4b',
           primary: '#5b21b6',
-          accent: '#8b5cf6',
           surface: '#faf5ff',
-        },
+        }),
       },
     },
   },

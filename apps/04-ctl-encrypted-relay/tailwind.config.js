@@ -1,5 +1,9 @@
+import aurelia from '@aurelia/tokens'
+import { appColors, accents } from '@aurelia/tokens/palette'
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  presets: [aurelia],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,11 +11,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        ctl: {
-          dark: '#0b1f3a',
-          emerald: '#10b981',
-          surface: '#f8fafc',
-        },
+        // Legacy alias: ctl-* === aurelia-* plus ctl-emerald
+        ctl: appColors({ emerald: accents.emerald.hex }),
       },
     },
   },

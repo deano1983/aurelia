@@ -3,5 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "Aurelia design tokens: Tailwind preset + CSS variables",
-  "main": "index.cjs"
+  "main": "index.cjs",
+  "exports": {
+    ".": "./index.cjs",
+    "./palette": "./palette.cjs",
+    "./tokens.css": "./tokens.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.cjs",
+    "palette.cjs",
+    "tokens.css"
+  ]
 }

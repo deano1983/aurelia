@@ -68,10 +68,13 @@ export default function ConsistencyRadarChart({ profile, stats }: ConsistencyRad
               fillOpacity={0.15}
               radius={80}
             />
-            <Tooltip content={({ active }: { active?: any }) => {
-              if (!active || active.length === 0) return null;
-              const entry = active[0];
-              const payload = entry.payload ?? entry;
+            <Tooltip content={({ active, payload: items }: {
+              active?: boolean;
+              payload?: Array<{ name?: string | number; value?: number | string; payload?: { axis?: string; value?: number } }>;
+            }) => {
+              if (!active || !items || items.length === 0) return null;
+              const entry = items[0];
+              const payload = entry.payload ?? {};
               const label = String(payload.axis ?? entry.name ?? '');
               const value = Number(payload.value ?? entry.value ?? 0);
               return (
