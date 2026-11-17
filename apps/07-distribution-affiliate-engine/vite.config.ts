@@ -11,6 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+        cacheId: 'aurelia-07',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
       },
       manifest: {

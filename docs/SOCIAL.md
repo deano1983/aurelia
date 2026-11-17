@@ -115,6 +115,10 @@ supabase secrets set \
   (scheme + host + port, no path). The flow refuses to start from, or return
   to, any other origin. Add `capacitor://localhost` and `https://localhost`
   for the native builds.
+  `linkedin-post` uses the same list for CORS: browsers on any other origin
+  are refused.
+- `LINKEDIN_DAILY_POST_LIMIT` (optional, default 25) caps posts per user per
+  24 hours through `linkedin-post`, counted from `share_log`.
 - `LINKEDIN_VERSION` (optional) overrides the `LinkedIn-Version` header,
   default `202411`. LinkedIn retires each monthly version after about a year;
   when posting starts failing with a version error, set a recent `YYYYMM`.

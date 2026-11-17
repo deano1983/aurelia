@@ -43,7 +43,9 @@ function SignatureBanner({ signature }: { signature: PacketSignatureCheck | null
 
 export function DecryptedDisplay({ packet, signature }: DecryptedDisplayProps) {
   const verified = signature?.status === 'valid'
-  const claimed = verified ? '' : ' (claimed)'
+  // A valid signature proves which device sealed the packet, not that the
+  // desk, role or time typed into it are true (pentest N-04).
+  const claimed = verified ? ' (as written by the signer)' : ' (claimed)'
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6" data-testid="decrypted-packet">
       <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">📄 Decrypted Packet</h3>

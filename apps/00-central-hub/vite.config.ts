@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+        cacheId: 'aurelia-00',
+        // Scope / would otherwise delete every app's precache (pentest N-05).
+        cleanupOutdatedCaches: false,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         globIgnores: ['apps/**'],
         navigateFallbackDenylist: [/^\/apps\//]

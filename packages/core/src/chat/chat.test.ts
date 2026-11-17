@@ -119,6 +119,46 @@ describe('encrypted chat', () => {
     expect((await alice.history(room.id)).map(text)).toEqual(['carol has left'])
   })
 
+  it('rejects a key version that is not exactly latest + 1 (pentest N-01)', async () => {
+    const { server, clients } = await setup('alice', 'carol')
+    const room = await clients.alice.createRoom({ name: 'Pin', memberUserIds: ['carol'] })
+    await clients.alice.sendText(room.id, 'hi')
+    const row = server.raw.roomKeys.find((k) => k.roomId === room.id && k.deviceId === clients.carol.deviceId)!
+    const t = server.transportFor('carol')
+    await expect(
+      t.putRoomKeys([{ ...row, keyVersion: 2147483647, wrappedByUser: 'carol', wrappedByDevice: clients.carol.deviceId }]),
+    ).rejects.toThrow(/latest \+ 1/)
+    expect(await t.latestKeyVersion(room.id)).toBe(1)
+  })
+
+  it('does not keep sending under a key planted by a member who then left (pentest N-01)', async () => {
+    const { server, clients } = await setup('alice', 'bob', 'carol')
+    const { alice, bob, carol } = clients
+    const room = await alice.createRoom({ name: 'Planted', memberUserIds: ['bob', 'carol'] })
+    await alice.sendText(room.id, 'v1')
+    const planted = await carol.rotateRoomKey(room.id)
+    // Carol wraps her key for everyone but her own device, so the recipient set
+    // matches the room once she is gone.
+    server.raw.roomKeys = server.raw.roomKeys.filter((k) => !(k.keyVersion === planted && k.deviceId === carol.deviceId))
+    await carol.removeMember(room.id, 'carol')
+    await bob.sendText(room.id, 'after carol left')
+    expect(server.raw.messages.at(-1)!.keyVersion).toBe(planted + 1)
+    expect((await alice.history(room.id)).map(text)).toEqual(['v1', 'after carol left'])
+  })
+
+  it('re-keys instead of failing when the latest key is unreadable (pentest N-02)', async () => {
+    const { server, clients } = await setup('alice', 'bob', 'carol')
+    const { alice, bob, carol } = clients
+    const room = await alice.createRoom({ name: 'Lockout', memberUserIds: ['bob', 'carol'] })
+    const bad = await carol.rotateRoomKey(room.id)
+    for (const k of server.raw.roomKeys) {
+      if (k.keyVersion === bad && k.deviceId !== carol.deviceId) k.wrappedKey = k.wrappedKey.slice(0, -8) + 'AAAAAAAA'
+    }
+    await alice.sendText(room.id, 'still works')
+    expect(server.raw.messages.at(-1)!.keyVersion).toBe(bad + 1)
+    expect((await bob.history(room.id)).map(text)).toEqual(['still works'])
+  })
+
   it('new members cannot read history from before they joined', async () => {
     const { clients } = await setup('alice', 'bob', 'dan')
     const { alice, dan } = clients

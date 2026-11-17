@@ -1,3 +1,4 @@
+import { oauthRedirectUri } from './redirect'
 import type { CloudProviderConfig, OAuthTokens } from './index'
 
 export const ONEDRIVE: CloudProviderConfig = {
@@ -8,7 +9,9 @@ export const ONEDRIVE: CloudProviderConfig = {
   tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
   scopes: ['Files.ReadWrite.All', 'offline_access'],
   clientId: 'REPLACE_WITH_ONEDRIVE_CLIENT_ID',
-  redirectUri: 'http://localhost:5176/oauth/callback',
+  get redirectUri() {
+    return oauthRedirectUri()
+  },
 }
 
 export async function onedriveAuthorizeUrl(
