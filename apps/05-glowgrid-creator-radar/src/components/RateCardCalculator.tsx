@@ -11,7 +11,7 @@ import { formatAUD } from '../utils/audMoney';
 
 export interface RateCardCalculatorProps {
   followers?: number;
-  onRateCardChange?: (result: { lines: { label: string; qty: number; unitCents: number; lineCents: number }[]; totalCents: number }) => void;
+  onRateCardChange?: (result: { lines: { label: string; qty: number; unitCents: number; lineCents: number }[]; totalCents: number; tier?: string }) => void;
 }
 
 export default function RateCardCalculator({ followers, onRateCardChange }: RateCardCalculatorProps) {
@@ -100,7 +100,7 @@ export default function RateCardCalculator({ followers, onRateCardChange }: Rate
 
       <div className="mt-4">
         <button
-          onClick={() => onRateCardChange?.(result)}
+          onClick={() => onRateCardChange?.({ ...result, tier: tier.label })}
           className="inline-flex items-center gap-2 rounded-md border border-transparent bg-glowgrid-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-glowgrid-primaryHover focus:outline-none focus:ring-2 focus:ring-glowgrid-primary focus:ring-offset-2"
         >
           📋 Add to Media Kit

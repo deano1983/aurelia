@@ -11,6 +11,7 @@ import { RecipientForm } from './components/RecipientForm'
 import { EncryptButton } from './components/EncryptButton'
 import { DecryptBox } from './components/DecryptBox'
 import { PacketDisplay } from './components/PacketDisplay'
+import { UpdateBanner } from '@aurelia/core/events'
 import { DecryptedDisplay } from './components/DecryptedDisplay'
 
 const EMPTY_FIELDS: PacketFields = {
@@ -116,6 +117,7 @@ export default function App() {
           {decrypted && <DecryptedDisplay packet={decrypted} />}
         </div>
       </main>
+      <UpdateBanner />
     </div>
   )
 }

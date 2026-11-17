@@ -4,7 +4,9 @@ import { FinanceMemo } from './components/FinanceMemo'
 import { InvoicePreview } from './components/InvoicePreview'
 import { PdfExportButton } from './components/PdfExportButton'
 import { TierSelector } from './components/TierSelector'
-import { traceInterlink } from './utils/interlinks'
+import { expenseInterlinks, traceInterlink } from './utils/interlinks'
+import { generateInvoiceNumber } from './utils/invoiceNumber'
+import { UpdateBanner } from '@aurelia/core/events'
 import { buildInvoice } from './utils/invoice'
 import type { BuyerDetails, SubscriptionTier } from './types'
 import { APP_ID_AFFILIATE, APP_ID_ASSET_VAULT, APP_ID_TIMELINE } from './utils/interlinks'
@@ -15,18 +17,23 @@ export default function App() {
   const [buyer, setBuyer] = useState<BuyerDetails>(EMPTY_BUYER)
   const [dueDate, setDueDate] = useState<string>('')
 
-  const invoice = useMemo(() => buildInvoice(tier, buyer, dueDate), [tier, buyer, dueDate])
+  // One invoice number per selected tier, so editing the due date updates the
+  // same 01 Timeline deadline instead of creating a new one each time.
+  const invoiceNumber = useMemo(() => (tier ? generateInvoiceNumber() : ''), [tier])
+  const invoice = useMemo(
+    () => buildInvoice(tier, buyer, dueDate, invoiceNumber || undefined),
+    [tier, buyer, dueDate, invoiceNumber],
+  )
 
   const handleTierSelect = useCallback((next: SubscriptionTier) => {
     setTier(next)
     // Interlink: subscription tier selected → 07 Affiliate Engine
-    // (partner attribution / commission). Wired by the host shell.
-    if (next.affiliatePartnerId) {
-      traceInterlink(APP_ID_AFFILIATE, 'tierSelected', {
-        tierId: next.id,
-        partnerId: next.affiliatePartnerId,
-      })
-    }
+    // (partner attribution / commission).
+    expenseInterlinks.onTierSelected(next.id, next.affiliatePartnerId)
+    traceInterlink(APP_ID_AFFILIATE, 'tierSelected', {
+      tierId: next.id,
+      partnerId: next.affiliatePartnerId,
+    })
   }, [])
 
   const handleBuyerChange = useCallback((next: BuyerDetails) => {
@@ -37,6 +44,7 @@ export default function App() {
     setDueDate(next)
     // Interlink: invoice due dates → 01 Timeline (hard report deadline).
     if (next && invoice) {
+      expenseInterlinks.onDueDateSet(next, invoice.invoiceNumber, invoice.totalCents / 100)
       traceInterlink(APP_ID_TIMELINE, 'dueDateSet', {
         dueDate: next,
         invoiceNumber: invoice.invoiceNumber,
@@ -49,8 +57,9 @@ export default function App() {
     navigator.clipboard.writeText(memo)
   }, [])
 
-  const handlePdfExport = useCallback((blob: Blob) => {
+  const handlePdfExport = useCallback((blob: Blob, fileName?: string) => {
     // Interlink: invoice PDF → 02 Asset Vault (cloud proof pointer).
+    if (invoice) void expenseInterlinks.onPdfExported(blob, invoice.invoiceNumber, fileName)
     traceInterlink(APP_ID_ASSET_VAULT, 'pdfExported', {
       invoiceNumber: invoice?.invoiceNumber,
       bytes: blob.size,
@@ -101,6 +110,7 @@ export default function App() {
         Aurelia OS Command Suite — App 06 • ABN {ABN} • Pre-coded expense category:
         {EXPENSE_CATEGORY} / {EXPENSE_SUBCATEGORY}
       </footer>
+      <UpdateBanner />
     </div>
   )
 }

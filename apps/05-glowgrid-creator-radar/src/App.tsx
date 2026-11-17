@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import type { CreatorProfile } from './types';
 import type { StreakRecord } from './types';
 import { computeStreak } from './utils/streak';
-import { saveStreak } from './utils/storage';
+import { saveRateCard, saveStreak } from './utils/storage';
+import { UpdateBanner } from '@aurelia/core/events';
 import CreatorProfileComponent from './components/CreatorProfile';
 import StreakCalendar from './components/StreakCalendar';
 import ConsistencyRadarChart from './components/ConsistencyRadarChart';
@@ -26,8 +27,10 @@ export default function App() {
     setRecord(next);
     saveStreak(next);
   }, []);
-  const onRateCardChange = useCallback((result: { totalCents: number }) => {
+  const onRateCardChange = useCallback((result: { totalCents: number; tier?: string }) => {
     setTotalCents(result.totalCents);
+    // Interlink: rate card → 07 Affiliate Engine (glowgrid.rate_card_set).
+    if (result.tier) saveRateCard(result.tier, result.totalCents);
   }, []);
 
   return (
@@ -76,6 +79,7 @@ export default function App() {
           (integer cent math). Data persists in localStorage only.
         </div>
       </footer>
+      <UpdateBanner />
     </div>
   );
 }

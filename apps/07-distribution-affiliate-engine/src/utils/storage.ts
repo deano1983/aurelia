@@ -26,4 +26,5 @@ export const STORAGE_KEYS = {
   partners: 'partners',
   ledger: 'ledger',
   pitches: 'pitches',
+  inbox: 'inbox',
 } as const

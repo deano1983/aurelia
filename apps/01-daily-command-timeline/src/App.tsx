@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTimeline } from './hooks/useTimeline'
 import { TimelineList } from './components/TimelineList'
 import { AddDeadlineForm } from './components/AddDeadlineForm'
@@ -6,10 +6,15 @@ import { CategoryFilter } from './components/CategoryFilter'
 import { IcsExportButton } from './components/IcsExportButton'
 import { DeepLinkHandler } from './components/DeepLinkHandler'
 import { parseDeepLink } from './utils/deepLink'
+import { useTimelineInterlinks } from './hooks/useTimelineInterlinks'
+import { BusNotices, type BusNotice } from './components/BusNotices'
+import type { ExternalDeadline } from './utils/interlinks'
+import { UpdateBanner } from '@aurelia/core/events'
 import type { DeepLinkDeadline, TimelineItem, TimelineCategory, TimelineTag } from './types'
 
 export default function App() {
   const {
+    items,
     activeItems,
     completedItems,
     addItem,
@@ -17,7 +22,39 @@ export default function App() {
     removeItem,
     hydrated,
     stats,
+    upsertExternal,
+    restoreExternal,
   } = useTimeline()
+
+  // Deadlines from 06 Tax Invoice (invoice.due_set) and any app (timeline.deadline_requested).
+  // Each change is announced with an Undo (bus events never change data silently).
+  const itemsRef = useRef(items)
+  itemsRef.current = items
+  const [busNotices, setBusNotices] = useState<BusNotice[]>([])
+  const handleExternal = useCallback(
+    (next: ExternalDeadline) => {
+      const before = itemsRef.current.find((i) => i.externalKey === next.externalKey) ?? null
+      upsertExternal(next)
+      setBusNotices((prev) =>
+        [
+          { key: next.externalKey, title: next.title, sourceApp: next.sourceApp, before },
+          ...prev.filter((n) => n.key !== next.externalKey),
+        ].slice(0, 3),
+      )
+    },
+    [upsertExternal],
+  )
+  useTimelineInterlinks(handleExternal, hydrated)
+  const closeNotice = useCallback((key: string) => {
+    setBusNotices((prev) => prev.filter((n) => n.key !== key))
+  }, [])
+  const undoNotice = useCallback(
+    (notice: BusNotice) => {
+      restoreExternal(notice.key, notice.before)
+      closeNotice(notice.key)
+    },
+    [restoreExternal, closeNotice],
+  )
 
   const [filterCategory, setFilterCategory] = useState<'all' | TimelineCategory>(
     'all',
@@ -167,6 +204,8 @@ export default function App() {
           }}
         />
       )}
+      <BusNotices notices={busNotices} onUndo={undoNotice} onClose={closeNotice} />
+      <UpdateBanner />
     </div>
   )
 }

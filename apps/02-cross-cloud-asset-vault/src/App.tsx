@@ -18,6 +18,9 @@ import { CloudSelector } from './components/CloudSelector'
 import { LinkPointerButton } from './components/LinkPointerButton'
 import { PointerList } from './components/PointerList'
 import { ProviderCards } from './components/ProviderCards'
+import { PendingPointers } from './components/PendingPointers'
+import { usePendingPointers } from './utils/interlinks'
+import { UpdateBanner } from '@aurelia/core/events'
 
 const PROVIDER_CONFIGS: Record<CloudProvider, CloudProviderConfig> = {
   icloud: ICLOUD,
@@ -48,6 +51,9 @@ export default function App() {
   const [exchanging, setExchanging] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  // Invoice PDFs from 06 (invoice.pdf_exported) waiting to become pointers.
+  const { pending, remove: dropPending } = usePendingPointers()
+  const [pointerVersion, setPointerVersion] = useState(0)
 
 
   const handleConnect = async (selected: CloudProvider) => {
@@ -138,9 +144,18 @@ export default function App() {
             </p>
           </div>
         )}
+        <PendingPointers
+          pending={pending}
+          provider={provider}
+          onRemove={dropPending}
+          onLinked={(text) => {
+            setMessage(text)
+            setPointerVersion((v) => v + 1)
+          }}
+        />
         <ProviderCards onConnect={handleConnect} connecting={connecting} />
         <div className="mt-8">
-          <PointerList provider={provider} />
+          <PointerList key={pointerVersion} provider={provider} />
         </div>
         <footer className="mt-12 pt-6 border-t border-slate-200">
           <p className="text-xs text-slate-400 leading-relaxed">
@@ -152,6 +167,7 @@ export default function App() {
           </p>
         </footer>
       </main>
+      <UpdateBanner />
     </div>
   )
 }
