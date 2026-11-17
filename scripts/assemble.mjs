@@ -2,7 +2,7 @@
 //   site/            -> 00-central-hub
 //   site/apps/<app>/ -> each of the seven apps (built with base /apps/<app>/)
 import { execSync } from 'node:child_process'
-import { cpSync, readdirSync, rmSync, mkdirSync } from 'node:fs'
+import { cpSync, readdirSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const root = new URL('..', import.meta.url).pathname
@@ -20,4 +20,29 @@ for (const app of apps) {
   const target = app.startsWith('00-') ? out : join(out, 'apps', app)
   cpSync(join(dir, 'dist'), target, { recursive: true })
 }
+// Security headers for the single origin. `_headers` is read by Netlify and
+// Cloudflare Pages; other hosts must send the same values (see README).
+const csp = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com",
+  "form-action 'self' https://*.supabase.co",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+].join('; ')
+writeFileSync(join(out, '_headers'), `/*
+  Content-Security-Policy: ${csp}
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), geolocation=(), microphone=(self)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+`)
+
 console.log(`\nAssembled ${apps.length} apps into ${out}`)

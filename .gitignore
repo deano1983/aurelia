@@ -9,3 +9,4 @@ apks/
 *.local
 *.log
 .claude/
+!.env.production
