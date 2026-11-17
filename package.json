@@ -14,7 +14,8 @@
     "build:site": "node scripts/assemble.mjs",
     "dev:hub": "npm run dev -w central-hub",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check:manifests": "node scripts/check-manifests.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

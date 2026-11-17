@@ -3,7 +3,12 @@
 // Exits 1 on any error; legacy storage keys are printed as warnings.
 // Runs the TypeScript validator directly (Node >= 22.18 strips types natively).
 import { fileURLToPath } from 'node:url'
-import { checkRegistryOnDisk } from '../packages/core/src/manifest/node.ts'
+
+if (!process.features.typescript) {
+  console.error(`check:manifests needs Node >= 22.18 (native TypeScript type stripping); this is ${process.version}.`)
+  process.exit(1)
+}
+const { checkRegistryOnDisk } = await import('../packages/core/src/manifest/node.ts')
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const { errors, warnings, manifests } = checkRegistryOnDisk(root)
