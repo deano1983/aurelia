@@ -14,6 +14,8 @@ export type TimelineItem = {
   description?: string
   slot: TimelineSlot
   sourceApp?: string
+  /** Set on items created from another app's event, for dedupe. */
+  externalKey?: string
   createdAt: string
   completed: boolean
 }

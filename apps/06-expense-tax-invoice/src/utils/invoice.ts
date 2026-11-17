@@ -13,6 +13,7 @@ export function buildInvoice(
   tier: SubscriptionTier | null,
   buyer: BuyerDetails,
   dueDate: string,
+  invoiceNumber: string = generateInvoiceNumber(),
 ): Invoice | null {
   if (!tier) return null
 
@@ -35,7 +36,7 @@ export function buildInvoice(
   ]
 
   return {
-    invoiceNumber: generateInvoiceNumber(),
+    invoiceNumber,
     issueDate,
     dueDate: resolvedDueDate,
     abn: ABN,

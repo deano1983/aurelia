@@ -6,7 +6,7 @@ import {
   formatAUD,
 } from '../utils/commissionCalc'
 import { loadJSON, saveJSON, STORAGE_KEYS } from '../utils/storage'
-import { buildTimelinePayoutUrl, traceInterlink } from '../utils/interlinks'
+import { buildTimelinePayoutUrl, requestTimelineDeadline, traceInterlink } from '../utils/interlinks'
 
 interface CommissionLedgerProps {
   partners: DistributionPartner[]
@@ -82,6 +82,11 @@ export function CommissionLedger({ partners }: CommissionLedgerProps) {
       title: `Affiliate payout — ${channelLabel(entry.channel)}`,
       due: payoutDate,
       desc: `Commission ${formatAUD(entry.commissionCents)} for ${entry.month}`,
+      tags: ['hard-report-deadline'],
+    })
+    requestTimelineDeadline({
+      title: `Affiliate payout — ${channelLabel(entry.channel)}`,
+      due: payoutDate,
       tags: ['hard-report-deadline'],
     })
     traceInterlink('01', 'payout-date-set', {

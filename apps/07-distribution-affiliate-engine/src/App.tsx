@@ -3,9 +3,10 @@ import { ChannelSelector } from './components/ChannelSelector'
 import { PartnerCards } from './components/PartnerCards'
 import { PitchTemplates } from './components/PitchTemplates'
 import { CommissionLedger } from './components/CommissionLedger'
-import { DeepLinkInbox } from './components/DeepLinkInbox'
+import { DeepLinkInbox, InboxList } from './components/DeepLinkInbox'
 import { CopyButton } from './components/CopyButton'
-import { parseInboundDeepLink } from './utils/interlinks'
+import { parseInboundDeepLink, useAffiliateInbox } from './utils/interlinks'
+import { UpdateBanner } from '@aurelia/core/events'
 import { loadJSON, saveJSON, STORAGE_KEYS } from './utils/storage'
 import type {
   DistributionChannel,
@@ -85,26 +86,37 @@ export default function App() {
     setSelectedChannel(channel)
   }, [])
 
-  const handleAcceptInbound = useCallback(
-    (payload: Record<string, string>) => {
-      if (!inbound) return
-      if (inbound.kind === 'linkedin-draft') {
+  // Payloads from 03 / 05 / 06 on the event bus.
+  const { entries: inboxEntries, remove: dropInboxEntry } = useAffiliateInbox()
+
+  const applyInbound = useCallback(
+    (link: InboundDeepLink) => {
+      const payload = link.payload
+      if (link.kind === 'linkedin-draft') {
         setSelectedChannel('velvet-cadence')
         setPrefillDraft(payload.draft ?? null)
-      } else if (inbound.kind === 'rate-card') {
+      } else if (link.kind === 'rate-card') {
         setSelectedChannel('glowgrid-studio')
         setPrefillPartner(payload.creator ?? null)
-      } else if (inbound.kind === 'tier-attribution') {
+      } else if (link.kind === 'tier-attribution') {
         const partner = partners.find((p) => p.id === payload.partnerId)
         if (partner) {
           setSelectedChannel(partner.channel)
           setPrefillPartner(partner.name)
         }
       }
+    },
+    [partners],
+  )
+
+  const handleAcceptInbound = useCallback(
+    (payload: Record<string, string>) => {
+      if (!inbound) return
+      applyInbound({ ...inbound, payload })
       setInbound(null)
       window.location.hash = ''
     },
-    [inbound, partners],
+    [inbound, applyInbound],
   )
 
   const handleDismissInbound = useCallback(() => {
@@ -145,6 +157,14 @@ export default function App() {
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
+        <InboxList
+          entries={inboxEntries}
+          onApply={(entry) => {
+            applyInbound(entry)
+            dropInboxEntry(entry.id)
+          }}
+          onDismiss={dropInboxEntry}
+        />
         {timelinePayoutUrl && (
           <div className="mb-4 p-4 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm">
             <p className="font-semibold mb-1">Payout scheduled → 01 Timeline</p>
@@ -196,6 +216,7 @@ export default function App() {
           onDismiss={handleDismissInbound}
         />
       )}
+      <UpdateBanner />
     </div>
   )
 }

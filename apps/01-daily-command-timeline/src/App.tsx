@@ -6,6 +6,8 @@ import { CategoryFilter } from './components/CategoryFilter'
 import { IcsExportButton } from './components/IcsExportButton'
 import { DeepLinkHandler } from './components/DeepLinkHandler'
 import { parseDeepLink } from './utils/deepLink'
+import { useTimelineInterlinks } from './hooks/useTimelineInterlinks'
+import { UpdateBanner } from '@aurelia/core/events'
 import type { DeepLinkDeadline, TimelineItem, TimelineCategory, TimelineTag } from './types'
 
 export default function App() {
@@ -17,7 +19,11 @@ export default function App() {
     removeItem,
     hydrated,
     stats,
+    upsertExternal,
   } = useTimeline()
+
+  // Deadlines from 06 Tax Invoice (invoice.due_set) and any app (timeline.deadline_requested).
+  useTimelineInterlinks(upsertExternal, hydrated)
 
   const [filterCategory, setFilterCategory] = useState<'all' | TimelineCategory>(
     'all',
@@ -167,6 +173,7 @@ export default function App() {
           }}
         />
       )}
+      <UpdateBanner />
     </div>
   )
 }

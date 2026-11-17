@@ -12,12 +12,11 @@ import {
   APP_ID_ASSET_VAULT,
   APP_ID_AFFILIATE,
   APP_ID_TIMELINE,
-  traceInterlink,
 } from '../utils/interlinks'
 
 interface PdfExportButtonProps {
   invoice: Invoice | null
-  onExport?: (blob: Blob) => void
+  onExport?: (blob: Blob, fileName: string) => void
   disabled?: boolean
 }
 
@@ -154,19 +153,17 @@ export function PdfExportButton({ invoice, onExport, disabled = false }: PdfExpo
     const raw = doc.output('blob') as unknown as Blob | Promise<Blob>
     const pdfBlob = raw instanceof Blob ? raw : await raw
 
-    // Interlink: invoice PDF → 02 Asset Vault (cloud proof pointer)
+    // Interlink: invoice PDF → 02 Asset Vault (cloud proof pointer); App emits
+    // invoice.pdf_exported via expenseInterlinks.onPdfExported.
+    const fileName = `Tax Invoice ${invoice.invoiceNumber}.pdf`
     if (onExport) {
-      onExport(pdfBlob)
+      onExport(pdfBlob, fileName)
     }
-    traceInterlink(APP_ID_ASSET_VAULT, 'pdfExported', {
-      invoiceNumber: invoice.invoiceNumber,
-      bytes: pdfBlob.size,
-    })
 
     const url = URL.createObjectURL(pdfBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `Tax Invoice ${invoice.invoiceNumber}.pdf`
+    link.download = fileName
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

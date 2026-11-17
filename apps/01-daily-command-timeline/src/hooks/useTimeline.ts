@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 import type { TimelineItem, TimelineCategory, TimelineTag, TimelineSlot } from '../types'
+import { upsertExternalItem, type ExternalDeadline } from '../utils/interlinks'
 
 const STORAGE_KEY = 'aurelia-timeline-items'
 
@@ -25,6 +26,11 @@ export function useTimeline() {
     },
     [],
   )
+
+  /** Add or update an item sent by another app (deduped by externalKey). */
+  const upsertExternal = useCallback((item: ExternalDeadline) => {
+    setItems((prev) => upsertExternalItem(prev, item))
+  }, [])
 
   const toggleItem = useCallback((id: string) => {
     setItems((prev) =>
@@ -64,6 +70,7 @@ export function useTimeline() {
     toggleItem,
     removeItem,
     updateItem,
+    upsertExternal,
     CATEGORIES,
     TAGS,
     SLOTS,
