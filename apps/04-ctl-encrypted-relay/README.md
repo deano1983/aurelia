@@ -2,11 +2,13 @@
 
 Functionality from velvetcadence page:
 - AES-256-GCM · Zero-Plaintext End-to-end encryption
-- PBKDF2-SHA256 120,000 rounds
+- PBKDF2-SHA256 600,000 rounds for new packets (v2, header bound as AAD); legacy 120,000-round v1 links still open
+- Packets are signed by the sender's chat device when signed in; unsigned packets show sender fields as claimed
+- Chat tab: end-to-end encrypted rooms (see docs/CHAT-SECURITY.md)
 - Passphrases never touch storage
 - URL `#ctl=` handoff links keep ciphertext in browser hash fragment (nothing sent to static servers)
 - Sender Desk / Role, Recipient Role, Channel / Subject
-- Shared Room Passphrase (min 6 chars)
+- Shared Room Passphrase (min 12 chars, or generate one)
 - Attach Cloud Proof Pointer (optional)
 - Confidential Interoffice Note / Sign-Off Instruction
 - "Seal & Encrypt Packet" / "Decrypt Incoming CTL Packet"
