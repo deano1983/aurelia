@@ -1,3 +1,5 @@
+// The Web Speech API is not in TypeScript's DOM lib, so it stays untyped.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SpeechRecognitionCtor = any
 
 const getSpeechRecognition = (): SpeechRecognitionCtor | null =>
@@ -43,6 +45,7 @@ export class SpeechTranscriber {
     this.recognition.interimResults = true
     this.recognition.lang = lang
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SpeechRecognitionEvent is not in the DOM lib
     this.recognition.onresult = (event: any) => {
       let final = ''
       let interim = ''

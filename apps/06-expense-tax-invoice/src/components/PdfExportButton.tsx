@@ -117,7 +117,8 @@ export function PdfExportButton({ invoice, onExport, disabled = false }: PdfExpo
       { label: 'Total payable (incl. GST)', value: centsToAud(invoice.totalCents), bold: true },
     ]
     totals.forEach((t) => {
-      t.bold ? bold(10) : body(9)
+      if (t.bold) bold(10)
+      else body(9)
       doc.text(t.label, MARGIN, y + 6)
       doc.text(t.value, pageWidth - MARGIN, y + 6, { align: 'right' })
       y += 7
