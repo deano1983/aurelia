@@ -1,0 +1,33 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "05",
+  "slug": "glowgrid-creator-radar",
+  "folder": "05-glowgrid-creator-radar",
+  "name": "GlowGrid Creator Radar",
+  "shortName": "GlowGrid",
+  "tagline": "Streak tracking, AUD rate-card calculator",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "📊",
+  "accent": "pink",
+  "route": "/apps/05-glowgrid-creator-radar/",
+  "nativeId": "com.aurelia.os.glowgrid",
+  "emits": [
+    "glowgrid.rate_card_set"
+  ],
+  "accepts": [
+    "hub.session_changed"
+  ],
+  "deepLinks": [],
+  "storageKeys": [
+    "glowgrid:creator",
+    "glowgrid:streak"
+  ],
+  "dependencies": [
+    "07",
+    "03"
+  ],
+  "notes": "storageKeys: \"glowgrid:creator\" and \"glowgrid:streak\" predate the aurelia.05. prefix (targets: aurelia.05.creator, aurelia.05.streak); left as is for the storage migration."
+}

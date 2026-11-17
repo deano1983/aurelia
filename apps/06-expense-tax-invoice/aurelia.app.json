@@ -1,0 +1,32 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "06",
+  "slug": "expense-tax-invoice",
+  "folder": "06-expense-tax-invoice",
+  "name": "Expense & Tax Invoice",
+  "shortName": "Tax Invoice",
+  "tagline": "Australian Tax Invoice, ABN, finance approval memo",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "🧾",
+  "accent": "cyan",
+  "route": "/apps/06-expense-tax-invoice/",
+  "nativeId": "com.aurelia.os.taxinvoice",
+  "emits": [
+    "invoice.due_set",
+    "invoice.tier_selected",
+    "invoice.pdf_exported"
+  ],
+  "accepts": [
+    "hub.session_changed"
+  ],
+  "deepLinks": [],
+  "storageKeys": [],
+  "dependencies": [
+    "01",
+    "07"
+  ],
+  "notes": "No persistent storage yet."
+}

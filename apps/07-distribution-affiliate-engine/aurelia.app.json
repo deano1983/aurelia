@@ -1,0 +1,41 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "07",
+  "slug": "distribution-affiliate-engine",
+  "folder": "07-distribution-affiliate-engine",
+  "name": "Distribution Affiliate Engine",
+  "shortName": "Affiliate Engine",
+  "tagline": "30–35% recurring, partner pitches, 2-tap close",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "🤝",
+  "accent": "gold",
+  "route": "/apps/07-distribution-affiliate-engine/",
+  "nativeId": "com.aurelia.os.affiliate",
+  "emits": [
+    "timeline.deadline_requested"
+  ],
+  "accepts": [
+    "invoice.tier_selected",
+    "voice.draft_ready",
+    "glowgrid.rate_card_set",
+    "hub.session_changed"
+  ],
+  "deepLinks": [
+    "affiliate/inbox?"
+  ],
+  "storageKeys": [
+    "affiliate-partners",
+    "affiliate-ledger",
+    "affiliate-pitches"
+  ],
+  "dependencies": [
+    "03",
+    "04",
+    "05",
+    "06"
+  ],
+  "notes": "storageKeys: \"affiliate-partners\", \"affiliate-ledger\" and \"affiliate-pitches\" (PREFIX \"affiliate-\" in src/utils/storage.ts) predate the aurelia.07. prefix (targets: aurelia.07.partners, .ledger, .pitches); left as is for the storage migration. Emits timeline.deadline_requested for payout dates (today via a #timeline/add? link to 01)."
+}

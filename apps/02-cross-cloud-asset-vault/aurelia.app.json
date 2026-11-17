@@ -1,0 +1,35 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "02",
+  "slug": "cross-cloud-asset-vault",
+  "folder": "02-cross-cloud-asset-vault",
+  "name": "Cross-Cloud Asset Vault",
+  "shortName": "Asset Vault",
+  "tagline": "Zero-blob pointers, $0 egress, iCloud/OneDrive/GDrive",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "☁️",
+  "accent": "cyan",
+  "route": "/apps/02-cross-cloud-asset-vault/",
+  "nativeId": "com.aurelia.os.assetvault",
+  "emits": [
+    "vault.pointer_created"
+  ],
+  "accepts": [
+    "invoice.pdf_exported",
+    "hub.session_changed"
+  ],
+  "deepLinks": [
+    "vault="
+  ],
+  "storageKeys": [
+    "aurelia-vault"
+  ],
+  "dependencies": [
+    "03",
+    "04"
+  ],
+  "notes": "storageKeys: \"aurelia-vault\" is an IndexedDB database (store \"pointers\"), not a localStorage key; it predates the aurelia.02. prefix (target: aurelia.02.vault) and is left as is for the storage migration."
+}

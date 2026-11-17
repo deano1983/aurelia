@@ -1,0 +1,41 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "00",
+  "slug": "central-hub",
+  "folder": "00-central-hub",
+  "name": "Aurelia OS — Central Hub",
+  "shortName": "Central Hub",
+  "tagline": "Sovereign Command Suite entry point: one sign-in, every app",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "🏛️",
+  "accent": "cyan",
+  "route": "/",
+  "nativeId": "com.aurelia.os.centralhub",
+  "emits": [
+    "hub.session_changed"
+  ],
+  "accepts": [
+    "chat.message_received",
+    "share.posted"
+  ],
+  "deepLinks": [
+    "ctl=",
+    "vault="
+  ],
+  "storageKeys": [
+    "aurelia_session"
+  ],
+  "dependencies": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07"
+  ],
+  "notes": "storageKeys: \"aurelia_session\" predates the aurelia.00. prefix (target: aurelia.00.session); left as is for the storage migration. deepLinks: the hub recognises #ctl= and #vault= and forwards them to 04 and 02."
+}
