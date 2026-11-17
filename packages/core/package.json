@@ -12,6 +12,13 @@
     "./share": "./src/share/index.ts",
     "./chat": "./src/chat/index.ts"
   },
-  "scripts": { "test": "vitest run" },
-  "peerDependencies": { "react": "^18" }
+  "scripts": {
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0"
+  }
 }
