@@ -1,14 +1,12 @@
 import type { EncryptedPacket } from '../types'
+import { packetToUrlHash } from '../crypto'
 
 type PacketDisplayProps = {
   packet: EncryptedPacket
 }
 
 export function PacketDisplay({ packet }: PacketDisplayProps) {
-  const hashLink = `#ctl=${btoa(JSON.stringify(packet))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')}`
+  const hashLink = packetToUrlHash(packet)
 
   return (
     <div className="space-y-4">
@@ -20,6 +18,14 @@ export function PacketDisplay({ packet }: PacketDisplayProps) {
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Version</span>
           <span className="text-xs font-mono text-slate-600">{packet.version}</span>
         </div>
+        {packet.version === '2' && (
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">KDF</span>
+            <span className="text-xs font-mono text-slate-600">
+              {packet.kdf} × {packet.iterations.toLocaleString('en-AU')}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">IV</span>
           <span className="text-xs font-mono text-slate-600 truncate">{packet.iv}</span>
