@@ -249,6 +249,13 @@ export class ChatClient {
       this.memberDevices(roomId),
     ])
     if (!sameSet(recipients, devices.map((d) => d.deviceId))) return this.rotateRoomKey(roomId)
+    // Fail closed (pentest N-01/N-02): only send under the latest key when it was
+    // wrapped by a device that is still in the room and this device can unwrap it.
+    // Otherwise a member could plant a key they keep (and read on after removal)
+    // or an unreadable one (and stop everyone sending). Re-keying fixes both.
+    const mine = await this.transport.getWrappedKey(roomId, this.id.deviceId, latest)
+    if (!mine || !devices.some((d) => d.deviceId === mine.wrappedByDevice)) return this.rotateRoomKey(roomId)
+    if (!(await this.roomKey(roomId, latest))) return this.rotateRoomKey(roomId)
     return latest
   }
 

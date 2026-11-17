@@ -28,7 +28,8 @@ Each one is idempotent.
 
 **Option A: SQL editor (no tooling)**
 1. Dashboard > SQL Editor > New query.
-2. Paste the contents of `migrations/0001_profiles.sql` and click Run.
+2. Paste the contents of each file in order (`0001_profiles.sql`, `0003_linkedin.sql`,
+   `0004_chat.sql`, `0005_chat_key_hardening.sql`) and click Run after each.
 
 **Option B: Supabase CLI**
 ```

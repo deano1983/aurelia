@@ -10,6 +10,7 @@ import {
   icloudExchangeCodeStub,
   onedriveExchangeCodeStub,
   googledriveExchangeCodeStub,
+  generateOAuthState,
   pkcePair,
   type CloudProviderConfig,
   type OAuthTokens,
@@ -62,8 +63,8 @@ export default function App() {
     setVerifier(codeVerifier)
     setConnecting(selected)
     setPendingCode('')
-    const url = await AUTHORIZE_FNS[selected]('aurelia-vault', codeChallenge)
-    window.open(url, '_blank')
+    const url = await AUTHORIZE_FNS[selected](generateOAuthState(), codeChallenge)
+    window.open(url, '_blank', 'noopener,noreferrer')
     setStatus(`Connecting to ${config.name}: complete sign-in, then paste the authorization code.`)
     setMessage(null)
   }

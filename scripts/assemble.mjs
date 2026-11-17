@@ -2,7 +2,7 @@
 //   site/            -> 00-central-hub
 //   site/apps/<app>/ -> each of the seven apps (built with base /apps/<app>/)
 import { execSync } from 'node:child_process'
-import { cpSync, readdirSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, readdirSync, readFileSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { resolveBuildId, writeVersion } from './write-version.mjs'
 
@@ -24,6 +24,13 @@ for (const app of apps) {
 }
 writeVersion({ out, buildId })
 
+// Pin the CSP to this project's Supabase host, not every *.supabase.co (pentest N-09).
+const envFile = join(root, '.env.production')
+const supabaseUrl =
+  process.env.VITE_SUPABASE_URL ??
+  (existsSync(envFile) ? readFileSync(envFile, 'utf8').match(/^VITE_SUPABASE_URL=(\S+)/m)?.[1] : undefined)
+const supabaseHost = supabaseUrl ? new URL(supabaseUrl).host : '*.supabase.co'
+
 // Security headers for the single origin. `_headers` is read by Netlify and
 // Cloudflare Pages; other hosts must send the same values (see README).
 const csp = [
@@ -32,8 +39,8 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com",
-  "form-action 'self' https://*.supabase.co",
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://www.googleapis.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com`,
+  `form-action 'self' https://${supabaseHost}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",

@@ -120,6 +120,14 @@ export class MemoryChatServer {
         return k ? clone(k) : null
       },
       async putRoomKeys(rows) {
+        // Mirrors chat_room_keys_insert (0005): a new version must be exactly latest + 1.
+        // All rows are checked against the state before the batch, like one INSERT.
+        const latest = new Map<string, number>()
+        for (const r of rows) {
+          if (!latest.has(r.roomId)) {
+            latest.set(r.roomId, raw.roomKeys.filter((k) => k.roomId === r.roomId).reduce((n, k) => Math.max(n, k.keyVersion), 0))
+          }
+        }
         for (const r of rows) {
           requireMember(r.roomId)
           if (r.wrappedByUser !== userId) throw new TransportError('forbidden', 'wrapped_by_user must be caller')
@@ -131,6 +139,11 @@ export class MemoryChatServer {
           }
           if (raw.roomKeys.some((k) => k.roomId === r.roomId && k.keyVersion === r.keyVersion && k.deviceId === r.deviceId)) {
             throw new TransportError('conflict', 'key version already exists')
+          }
+          if (r.keyVersion !== latest.get(r.roomId)! + 1) {
+            // Postgres reports a duplicate primary key first when a concurrent
+            // rotation took this version; otherwise the policy rejects it.
+            throw new TransportError(r.keyVersion <= latest.get(r.roomId)! ? 'conflict' : 'forbidden', 'key version must be latest + 1')
           }
         }
         for (const r of rows) raw.roomKeys.push(clone({ ...r, createdAt: new Date().toISOString() }))

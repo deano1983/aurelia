@@ -1,3 +1,4 @@
+import { oauthRedirectUri } from './redirect'
 import type { CloudProviderConfig, OAuthTokens } from './index'
 
 export const GOOGLEDRIVE: CloudProviderConfig = {
@@ -8,7 +9,9 @@ export const GOOGLEDRIVE: CloudProviderConfig = {
   tokenUrl: 'https://oauth2.googleapis.com/token',
   scopes: ['https://www.googleapis.com/auth/drive.file'],
   clientId: 'REPLACE_WITH_GOOGLE_DRIVE_CLIENT_ID',
-  redirectUri: 'http://localhost:5176/oauth/callback',
+  get redirectUri() {
+    return oauthRedirectUri()
+  },
 }
 
 export async function googledriveAuthorizeUrl(

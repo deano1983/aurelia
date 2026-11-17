@@ -17,13 +17,16 @@ export type OAuthTokens = {
   expiresIn: number
 }
 
-const CHARSET =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
-
+// RFC 7636: 32 random bytes, base64url-encoded (43 characters, unbiased).
 export function generateCodeVerifier(): string {
   const bytes = new Uint8Array(32)
   crypto.getRandomValues(bytes)
-  return Array.from(bytes, (byte) => CHARSET[byte % CHARSET.length]).join('')
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/** A fresh random OAuth `state` for each sign-in attempt. */
+export function generateOAuthState(): string {
+  return generateCodeVerifier()
 }
 
 export async function sha256Base64Url(input: string): Promise<string> {

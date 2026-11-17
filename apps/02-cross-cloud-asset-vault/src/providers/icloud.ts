@@ -1,3 +1,4 @@
+import { oauthRedirectUri } from './redirect'
 import type { CloudProviderConfig, OAuthTokens } from './index'
 
 export const ICLOUD: CloudProviderConfig = {
@@ -8,7 +9,9 @@ export const ICLOUD: CloudProviderConfig = {
   tokenUrl: 'https://appleid.apple.com/auth/token',
   scopes: ['name', 'email'],
   clientId: 'REPLACE_WITH_ICLOUD_CLIENT_ID',
-  redirectUri: 'http://localhost:5176/oauth/callback',
+  get redirectUri() {
+    return oauthRedirectUri()
+  },
 }
 
 export async function icloudAuthorizeUrl(
