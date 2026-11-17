@@ -61,3 +61,57 @@ jobs:
             apps/${{ matrix.app }}/android/app/build/outputs/apk/debug/app-debug.apk
             apps/${{ matrix.app }}/android/app/build/outputs/apk/release/*.apk
           retention-days: 30
+
+  build-ios:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - 00-central-hub
+          - 01-daily-command-timeline
+          - 02-cross-cloud-asset-vault
+          - 03-voice-authority-studio
+          - 04-ctl-encrypted-relay
+          - 05-glowgrid-creator-radar
+          - 06-expense-tax-invoice
+          - 07-distribution-affiliate-engine
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies & build web bundle
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          npm ci --prefix ../..
+          npm run build
+          npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/${{ matrix.app }}/ios/App
+        run: pod install
+
+      # Unsigned simulator build: proves the iOS project compiles on every tag.
+      # A signed .ipa for TestFlight needs an Apple Developer account and
+      # signing secrets (see NATIVE_BUILD_GUIDE.md).
+      - name: Build iOS app (simulator, unsigned)
+        working-directory: apps/${{ matrix.app }}/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - name: Upload iOS simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-ios-simulator
+          path: apps/${{ matrix.app }}/ios/App/build/Build/Products/Release-iphonesimulator/*.app
+          retention-days: 30
