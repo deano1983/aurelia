@@ -1,5 +1,9 @@
+import aurelia from '@aurelia/tokens'
+import { appColors } from '@aurelia/tokens/palette'
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  presets: [aurelia],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,14 +11,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        expense: {
-          dark: '#0b1f3a',
-          primary: '#1d4ed8',
-          accent: '#22d3ee',
-          surface: '#f8fafc',
-        },
+        // Legacy alias: expense-* === aurelia-*
+        expense: appColors(),
       },
     },
-    plugins: [],
   },
+  plugins: [],
 }

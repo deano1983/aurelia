@@ -1,10 +1,17 @@
+@import '@aurelia/tokens/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* This app's accent; see @aurelia/tokens/tokens.css */
+    --aurelia-accent: var(--aurelia-accent-emerald);
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-50 text-aurelia-ink antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 }

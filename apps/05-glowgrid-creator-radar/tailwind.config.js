@@ -1,5 +1,9 @@
+import aurelia from '@aurelia/tokens'
+import { appColors } from '@aurelia/tokens/palette'
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  presets: [aurelia],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,14 +11,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        glowgrid: {
+        // Legacy alias: glowgrid-* keeps its violet primary and deeper dark;
+        // glowgrid-accent follows --aurelia-accent (pink, see src/index.css).
+        glowgrid: appColors({
           dark: '#0b1226',
           primary: '#8b5cf6',
           primaryHover: '#7c3aed',
-          accent: '#22d3ee',
-          surface: '#f8fafc',
-          ink: '#0f172a',
-        },
+        }),
       },
       animation: {
         'pulse-glow': 'pulse-glow 2s infinite',
