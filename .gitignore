@@ -8,3 +8,4 @@ apks/
 !.env.example
 *.local
 *.log
+.claude/
