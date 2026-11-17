@@ -16,6 +16,8 @@ import {
   type MessageRecord,
 } from './index'
 import { decryptMessage, unwrapRoomKey } from './primitives'
+import { ctlHashToPacket, ctlPacketToHash, sealCtlPacket } from '../crypto/ctl'
+import type { PacketV2 } from '../crypto/packet'
 
 async function setup(...users: string[]) {
   const server = new MemoryChatServer()
@@ -227,6 +229,58 @@ describe('encrypted chat', () => {
     await alice.sendText(room.id, 'new') // alice notices bob's new device and re-keys
     const msgs = await bob.history(room.id)
     expect(msgs.map((m) => m.status)).toEqual(['no-key', 'ok'])
+  })
+})
+
+describe('device revocation', () => {
+  it('a revoked device gets no new room keys', async () => {
+    const { server, clients } = await setup('alice', 'bob')
+    const { alice, bob } = clients
+    // Bob's second device (e.g. a laptop that is later lost).
+    const laptop = new ChatClient({ transport: server.transportFor('bob'), keyStore: new MemoryKeyStore(), userId: 'bob' })
+    await laptop.init()
+    const room = await alice.createRoom({ name: 'Rev', memberUserIds: ['bob'] })
+    await alice.sendText(room.id, 'one')
+    expect((await laptop.history(room.id)).map(text)).toEqual(['one'])
+    await bob.revokeDevice(laptop.deviceId)
+    await alice.sendText(room.id, 'two')
+    expect((await laptop.history(room.id)).map((m) => m.status)).toEqual(['ok', 'no-key'])
+    expect((await bob.history(room.id)).map(text)).toEqual(['one', 'two'])
+    await expect(laptop.sendText(room.id, 'from lost laptop')).rejects.toThrow()
+    await expect(alice.revokeDevice(bob.deviceId)).rejects.toThrow(/own devices/)
+  })
+})
+
+describe('signed C.T.L. packets', () => {
+  it('verifies the sender device and rejects forgeries', async () => {
+    const { clients } = await setup('alice', 'bob', 'mallory', 'outsider')
+    const { alice, bob, mallory, outsider } = clients
+    await alice.createRoom({ name: 'Approvals', memberUserIds: ['bob', 'mallory'] })
+
+    const signed = await alice.sealSignedCtl({ senderDesk: 'Office of the CEO', subject: 'Approve wire' }, 'room-passphrase-1')
+    // Survives the #ctl= round trip.
+    const viaLink = ctlHashToPacket(ctlPacketToHash(signed)) as PacketV2
+    const ok = await bob.verifyPacket(viaLink)
+    expect(ok).toMatchObject({ status: 'valid', userId: 'alice', deviceId: alice.deviceId })
+
+    // Unsigned packet: honestly reported as unsigned.
+    const plain = await sealCtlPacket({ senderDesk: 'Office of the CEO' }, 'room-passphrase-1')
+    expect((await bob.verifyPacket(plain)).status).toBe('unsigned')
+
+    // Mallory knows the passphrase and re-seals with a forged sender, keeping alice's signature.
+    const forged = await sealCtlPacket({ senderDesk: 'Office of the CEO', subject: 'Approve OTHER wire' }, 'room-passphrase-1')
+    expect((await bob.verifyPacket({ ...forged, sig: signed.sig })).status).toBe('invalid')
+
+    // Mallory signs with her own device but claims to be alice.
+    const malSigned = await mallory.sealSignedCtl({ senderDesk: 'Office of the CEO' }, 'room-passphrase-1')
+    expect((await bob.verifyPacket({ ...malSigned, sig: { ...malSigned.sig!, user: 'alice', device: alice.deviceId } })).status).toBe('invalid')
+    expect((await bob.verifyPacket({ ...malSigned, sig: { ...malSigned.sig!, user: 'alice' } })).status).toBe('unknown-signer')
+
+    // Changing the authenticated header breaks the signature too.
+    expect((await bob.verifyPacket({ ...signed, iterations: signed.iterations + 1 })).status).toBe('invalid')
+
+    // Someone who shares no room with alice cannot look up her key.
+    expect((await outsider.verifyPacket(signed)).status).toBe('unknown-signer')
   })
 })
 

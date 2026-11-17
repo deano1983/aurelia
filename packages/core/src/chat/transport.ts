@@ -7,6 +7,8 @@ import type { DeviceRecord, MemberRecord, MessageRecord, RoomKeyRecord, RoomReco
 export interface ChatTransport {
   /** Upserts this user's device public keys. */
   publishDevice(device: DeviceRecord): Promise<void>
+  /** Marks one of the caller's own devices revoked (it receives no further room keys). */
+  revokeDevice(deviceId: string): Promise<void>
   /** Devices for the given users (the server only returns users that share a room with the caller, or the caller). */
   listDevices(userIds: string[]): Promise<DeviceRecord[]>
   /** Resolves an email address or user id to a user id, or null. */

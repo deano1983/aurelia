@@ -6,7 +6,8 @@ type PacketDisplayProps = {
 }
 
 export function PacketDisplay({ packet }: PacketDisplayProps) {
-  const hashLink = packetToUrlHash(packet)
+  // Full link to this relay; the packet travels only in the fragment, which browsers never send to servers.
+  const hashLink = `${window.location.origin}${window.location.pathname}${packetToUrlHash(packet)}`
 
   return (
     <div className="space-y-4">
@@ -23,6 +24,14 @@ export function PacketDisplay({ packet }: PacketDisplayProps) {
             <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">KDF</span>
             <span className="text-xs font-mono text-slate-600">
               {packet.kdf} × {packet.iterations.toLocaleString('en-AU')}
+            </span>
+          </div>
+        )}
+        {packet.version === '2' && (
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Sender signature</span>
+            <span className="text-xs font-mono text-slate-600" data-testid="packet-signed">
+              {packet.sig ? `ECDSA P-256 · device ${packet.sig.device.slice(0, 8)}` : 'none (unsigned)'}
             </span>
           </div>
         )}
@@ -48,11 +57,13 @@ export function PacketDisplay({ packet }: PacketDisplayProps) {
             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono text-slate-600 bg-slate-50"
             value={hashLink}
             readOnly
+            aria-label="Sealed link"
+            data-testid="sealed-link"
           />
           <button
             className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900"
             onClick={() => {
-              navigator.clipboard.writeText(hashLink)
+              navigator.clipboard?.writeText(hashLink).catch(() => undefined)
             }}
           >
             Copy

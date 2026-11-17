@@ -36,19 +36,35 @@ export const LEGACY_PBKDF2_ITERATIONS = 120_000
 export const DEFAULT_PBKDF2_ITERATIONS = 600_000
 export const MIN_PBKDF2_ITERATIONS = 100_000
 export const MAX_PBKDF2_ITERATIONS = 5_000_000
-export const MIN_PASSPHRASE_LENGTH = 6
+/** Minimum for NEW packets (legacy links sealed with shorter passphrases still open). */
+export const MIN_PASSPHRASE_LENGTH = 12
 export const SALT_BYTES = 16
 export const IV_BYTES = 12
 const GCM_TAG_BYTES = 16
 /** Upper bound on a packet's ciphertext; fragments beyond this are not plausible links. */
-export const MAX_CIPHERTEXT_BYTES = 256 * 1024
-const MAX_HASH_CHARS = 512 * 1024
+export const MAX_CIPHERTEXT_BYTES = 40 * 1024
+/** Size cap applied to a fragment/link before any base64 or JSON decoding. */
+export const MAX_HASH_CHARS = 64 * 1024
 
 export type LegacyPacket = {
   version: typeof LEGACY_PACKET_VERSION
   iv: string
   salt: string
   ciphertext: string
+}
+
+/**
+ * Optional sender signature (see chat/packetSignature.ts): an ECDSA P-256
+ * signature by a registered Aurelia device over the header, salt, IV and
+ * ciphertext. Without it a packet proves only knowledge of the passphrase.
+ */
+export type PacketSignature = {
+  /** Signer's user id (server-bound owner of the device). */
+  user: string
+  /** Signer's device id in chat_devices. */
+  device: string
+  /** base64url IEEE-P1363 ECDSA P-256/SHA-256 signature. */
+  value: string
 }
 
 export type PacketV2 = {
@@ -58,6 +74,7 @@ export type PacketV2 = {
   salt: string
   iv: string
   ciphertext: string
+  sig?: PacketSignature
 }
 
 export type SealedPacket = LegacyPacket | PacketV2
@@ -148,6 +165,48 @@ function decodeField(value: unknown, name: string, expectedLength?: number): Uin
   return bytes
 }
 
+const SIG_ID_RE = /^[A-Za-z0-9_-]{1,128}$/
+
+function parseSignature(value: unknown): PacketSignature {
+  const s = value as Record<string, unknown> | null
+  if (
+    !s ||
+    typeof s !== 'object' ||
+    typeof s.user !== 'string' ||
+    typeof s.device !== 'string' ||
+    typeof s.value !== 'string' ||
+    !SIG_ID_RE.test(s.user) ||
+    !SIG_ID_RE.test(s.device) ||
+    !/^[A-Za-z0-9_-]{80,100}$/.test(s.value)
+  ) {
+    throw new PacketError('malformed', 'packet signature malformed')
+  }
+  return { user: s.user, device: s.device, value: s.value }
+}
+
+/**
+ * The bytes a sender signature covers: the authenticated header (including
+ * the context and signer identity), salt, IV and ciphertext, length-prefixed.
+ */
+export function packetSigningBytes(packet: PacketV2, signer: { user: string; device: string }, context = 'ctl'): Uint8Array {
+  const parts = [
+    utf8Encode(`aurelia/packet-sig|v${PACKET_VERSION}|${checkContext(context)}|${PACKET_KDF}|${packet.iterations}|${signer.user}|${signer.device}`),
+    base64ToBytes(packet.salt),
+    base64ToBytes(packet.iv),
+    base64ToBytes(packet.ciphertext),
+  ]
+  const total = parts.reduce((n, p) => n + 4 + p.byteLength, 0)
+  const out = new Uint8Array(total)
+  const view = new DataView(out.buffer)
+  let o = 0
+  for (const p of parts) {
+    view.setUint32(o, p.byteLength)
+    out.set(p, o + 4)
+    o += 4 + p.byteLength
+  }
+  return out
+}
+
 /** Validates an untrusted value (e.g. parsed from a URL) as a packet. Throws PacketError. */
 export function parsePacket(value: unknown): SealedPacket {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -171,12 +230,14 @@ export function parsePacket(value: unknown): SealedPacket {
   if (v.version === PACKET_VERSION) {
     if (v.kdf !== PACKET_KDF) throw new PacketError('unsupported-version', 'unsupported packet KDF')
     if (typeof v.iterations !== 'number') throw new PacketError('malformed', 'packet iterations missing')
-    return {
+    const out: PacketV2 = {
       version: PACKET_VERSION,
       kdf: PACKET_KDF,
       iterations: checkIterations(v.iterations),
       ...(common as { salt: string; iv: string; ciphertext: string }),
     }
+    if (v.sig !== undefined) out.sig = parseSignature(v.sig)
+    return out
   }
   throw new PacketError('unsupported-version', `unsupported packet version ${String(v.version)}`)
 }
@@ -296,4 +357,19 @@ export function hashToPacket(input: string, prefix = 'ctl'): SealedPacket | null
   } catch {
     return null
   }
+}
+
+/**
+ * A random ~124-bit passphrase ("xxxxx-xxxxx-xxxxx-xxxxx-xxxxx") for sharing
+ * out of band. WebCrypto randomness with rejection sampling (uniform).
+ */
+export function generatePassphrase(): string {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789' // 31 symbols, no look-alikes
+  const chars: string[] = []
+  while (chars.length < 25) {
+    for (const b of randomBytes(32)) {
+      if (b < 248 && chars.length < 25) chars.push(alphabet[b % 31])
+    }
+  }
+  return [0, 5, 10, 15, 20].map((i) => chars.slice(i, i + 5).join('')).join('-')
 }

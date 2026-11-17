@@ -53,6 +53,11 @@ export class MemoryChatServer {
         if (i >= 0) raw.devices[i] = clone(device)
         else raw.devices.push(clone({ ...device, createdAt: device.createdAt ?? new Date().toISOString() }))
       },
+      async revokeDevice(deviceId) {
+        const d = raw.devices.find((x) => x.deviceId === deviceId)
+        if (!d || d.userId !== userId) throw new TransportError('forbidden', 'can only revoke own devices')
+        d.revokedAt = d.revokedAt ?? new Date().toISOString()
+      },
       async listDevices(userIds) {
         // Mirrors chat_devices_select: own devices, co-members' devices, and
         // devices that sent a message or wrapped a room key in a room the
@@ -118,9 +123,9 @@ export class MemoryChatServer {
           requireMember(r.roomId)
           if (r.wrappedByUser !== userId) throw new TransportError('forbidden', 'wrapped_by_user must be caller')
           const dev = raw.devices.find((d) => d.deviceId === r.wrappedByDevice)
-          if (!dev || dev.userId !== userId) throw new TransportError('forbidden', 'wrapping device not owned by caller')
+          if (!dev || dev.userId !== userId || dev.revokedAt) throw new TransportError('forbidden', 'wrapping device not owned by caller')
           const recipient = raw.devices.find((d) => d.deviceId === r.deviceId)
-          if (!recipient || !self.isMember(r.roomId, recipient.userId)) {
+          if (!recipient || recipient.revokedAt || !self.isMember(r.roomId, recipient.userId)) {
             throw new TransportError('forbidden', 'recipient device is not a room member')
           }
           if (raw.roomKeys.some((k) => k.roomId === r.roomId && k.keyVersion === r.keyVersion && k.deviceId === r.deviceId)) {
@@ -133,7 +138,7 @@ export class MemoryChatServer {
         requireMember(m.roomId)
         if (m.senderUser !== userId) throw new TransportError('forbidden', 'sender_user must be caller')
         const dev = raw.devices.find((d) => d.deviceId === m.senderDevice)
-        if (!dev || dev.userId !== userId) throw new TransportError('forbidden', 'sender device not owned by caller')
+        if (!dev || dev.userId !== userId || dev.revokedAt) throw new TransportError('forbidden', 'sender device not owned by caller')
         if (raw.messages.some((x) => x.roomId === m.roomId && x.senderDevice === m.senderDevice && x.seq === m.seq)) {
           throw new TransportError('conflict', 'duplicate seq')
         }

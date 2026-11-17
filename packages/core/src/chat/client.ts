@@ -2,7 +2,9 @@
 // room keys, plaintext) stays inside this object and the device's IndexedDB;
 // the transport only sees public keys, wrapped keys and ciphertext.
 
-import { ctlHashToPacket, ctlPacketToHash, openCtlPacket, sealCtlPacket, type CtlPayload } from '../crypto/ctl'
+import { ctlHashToPacket, ctlPacketToHash, openCtlPacket, sealCtlPacket, type CtlFields, type CtlPayload } from '../crypto/ctl'
+import type { PacketV2, SealedPacket } from '../crypto/packet'
+import { signPacket, verifyPacketSignature, type PacketSignatureCheck } from './packetSignature'
 import { deviceFingerprint, groupDigits, safetyNumber } from './fingerprint'
 import {
   assertId,
@@ -89,6 +91,17 @@ export class ChatClient {
     this.roomKeys.clear()
     this.identity = null
     return this.init()
+  }
+
+  /**
+   * Revokes another of this user's devices (e.g. a lost laptop). It gets no
+   * new room keys; every room re-keys on its next message.
+   */
+  async revokeDevice(deviceId: string): Promise<void> {
+    if (deviceId === this.deviceId) throw new Error('use resetDevice() to replace this device')
+    await this.transport.revokeDevice(deviceId)
+    const cached = this.devices.get(deviceId)
+    if (cached) this.devices.set(deviceId, { ...cached, revokedAt: new Date().toISOString() })
   }
 
   private get id(): DeviceIdentity {
@@ -356,6 +369,25 @@ export class ChatClient {
       this.seen.add(k)
       void this.decryptRecord(record).then(onMessage)
     })
+  }
+
+  // -------------------------------------------------------------------------
+  // Signed C.T.L. packets
+  // -------------------------------------------------------------------------
+
+  /** Seals relay fields under a passphrase and signs the packet with this device. */
+  async sealSignedCtl(fields: Partial<CtlFields>, passphrase: string): Promise<PacketV2> {
+    return signPacket(await sealCtlPacket(fields, passphrase), this.id, 'ctl')
+  }
+
+  /** Adds this device's signature to an already sealed v2 packet. */
+  signPacket(packet: PacketV2, context = 'ctl'): Promise<PacketV2> {
+    return signPacket(packet, this.id, context)
+  }
+
+  /** Verifies a packet's sender signature against the server's device directory. */
+  verifyPacket(packet: SealedPacket, context = 'ctl'): Promise<PacketSignatureCheck> {
+    return verifyPacketSignature(packet, (user, device) => this.deviceRecord(device, user), context)
   }
 
   // -------------------------------------------------------------------------

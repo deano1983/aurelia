@@ -16,6 +16,8 @@ import {
   sealCtlPacket,
   sealJson,
   utf8Encode,
+  generatePassphrase,
+  MAX_HASH_CHARS,
   type PacketV2,
 } from './index'
 
@@ -71,85 +73,118 @@ describe('legacy v1 packets (04 C.T.L. Relay before consolidation)', () => {
 
 describe('v2 packets', () => {
   it('round-trips JSON and records the header', async () => {
-    const packet = await sealJson({ hello: 'wörld' }, 'hunter22', FAST)
+    const packet = await sealJson({ hello: 'wörld' }, 'hunter22-board', FAST)
     expect(packet).toMatchObject({ version: '2', kdf: 'PBKDF2-SHA256', iterations: 100_000 })
     expect(packet.salt).toMatch(/^[A-Za-z0-9_-]+$/)
-    expect(await openJson(packet, 'hunter22')).toEqual({ hello: 'wörld' })
+    expect(await openJson(packet, 'hunter22-board')).toEqual({ hello: 'wörld' })
   })
 
   it('uses 600k iterations by default', async () => {
-    const packet = await sealBytes(utf8Encode('x'), 'hunter22')
+    const packet = await sealBytes(utf8Encode('x'), 'hunter22-board')
     expect(packet.iterations).toBe(600_000)
   })
 
   it('round-trips through the URL fragment', async () => {
-    const packet = await sealCtlPacket({ subject: 'Board pack', confidentialNote: 'Sign at 9' }, 'hunter22', FAST)
+    const packet = await sealCtlPacket({ subject: 'Board pack', confidentialNote: 'Sign at 9' }, 'hunter22-board', FAST)
     const hash = ctlPacketToHash(packet)
     expect(hash.startsWith('#ctl=')).toBe(true)
-    const payload = await openCtlPacket(ctlHashToPacket(hash), 'hunter22')
+    const payload = await openCtlPacket(ctlHashToPacket(hash), 'hunter22-board')
     expect(payload.subject).toBe('Board pack')
     expect(payload.confidentialNote).toBe('Sign at 9')
     expect(payload.timestamp).toMatch(/^\d{4}-/)
   })
 
   it('never seals the passphrase into the ciphertext', async () => {
-    const fields = { subject: 's', passphrase: 'hunter22' } as unknown as Record<string, string>
-    const packet = await sealCtlPacket(fields, 'hunter22', FAST)
-    const raw = await openJson<Record<string, unknown>>(packet, 'hunter22')
+    const fields = { subject: 's', passphrase: 'hunter22-board' } as unknown as Record<string, string>
+    const packet = await sealCtlPacket(fields, 'hunter22-board', FAST)
+    const raw = await openJson<Record<string, unknown>>(packet, 'hunter22-board')
     expect(raw).not.toHaveProperty('passphrase')
   })
 
   it('fails with a wrong passphrase', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', FAST)
-    await expectCode(openJson(packet, 'hunter23'), 'decrypt-failed')
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', FAST)
+    await expectCode(openJson(packet, 'hunter23-board'), 'decrypt-failed')
   })
 
   it('normalises the passphrase (NFC) so composed/decomposed input both work', async () => {
-    const packet = await sealJson({ a: 1 }, 'café-secret', FAST)
-    expect(await openJson(packet, 'café-secret')).toEqual({ a: 1 })
+    const composed = 'caf\u00e9-secret-room'
+    const decomposed = 'cafe\u0301-secret-room'
+    expect(composed).not.toBe(decomposed)
+    const packet = await sealJson({ a: 1 }, composed, FAST)
+    expect(await openJson(packet, decomposed)).toEqual({ a: 1 })
+  })
+
+  it('a valid packet with unexpected field types yields only strings (cannot crash a renderer)', async () => {
+    const packet = await sealJson(
+      { senderDesk: { a: 1 }, subject: ['x'], confidentialNote: 42, timestamp: null, passphrase: 'leak' },
+      'hunter22-board',
+      FAST,
+    )
+    const payload = await openCtlPacket(packet, 'hunter22-board')
+    for (const v of Object.values(payload)) expect(typeof v).toBe('string')
+    expect(payload.senderDesk).toBe('')
+    expect(payload).not.toHaveProperty('passphrase')
+  })
+
+  it('seals and opens a large note without overflowing the stack', async () => {
+    const note = 'x'.repeat(30_000)
+    const packet = await sealCtlPacket({ confidentialNote: note }, 'hunter22-board', FAST)
+    const hash = ctlPacketToHash(packet)
+    expect((await openCtlPacket(ctlHashToPacket(hash), 'hunter22-board')).confidentialNote).toBe(note)
+  })
+
+  it('caps the fragment size before decoding', () => {
+    expect(hashToPacket('#ctl=' + 'A'.repeat(MAX_HASH_CHARS))).toBeNull()
+  })
+
+  it('generates strong random passphrases', () => {
+    const a = generatePassphrase()
+    expect(a).toMatch(/^[a-z2-9]{5}(-[a-z2-9]{5}){4}$/)
+    expect(generatePassphrase()).not.toBe(a)
   })
 
   it('fails when the ciphertext is tampered', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', FAST)
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', FAST)
     const ct = base64ToBytes(packet.ciphertext)
     ct[0] ^= 0x80
-    await expectCode(openJson({ ...packet, ciphertext: bytesToBase64Url(ct) }, 'hunter22'), 'decrypt-failed')
+    await expectCode(openJson({ ...packet, ciphertext: bytesToBase64Url(ct) }, 'hunter22-board'), 'decrypt-failed')
   })
 
   it('fails when the authenticated header (iterations) is changed', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', FAST)
-    await expectCode(openJson({ ...packet, iterations: 100_001 }, 'hunter22'), 'decrypt-failed')
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', FAST)
+    await expectCode(openJson({ ...packet, iterations: 100_001 }, 'hunter22-board'), 'decrypt-failed')
   })
 
   it('fails when the context (AAD) differs', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', { ...FAST, context: 'vault' })
-    await expectCode(openJson(packet, 'hunter22', { context: 'ctl' }), 'decrypt-failed')
-    expect(await openJson(packet, 'hunter22', { context: 'vault' })).toEqual({ a: 1 })
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', { ...FAST, context: 'vault' })
+    await expectCode(openJson(packet, 'hunter22-board', { context: 'ctl' }), 'decrypt-failed')
+    expect(await openJson(packet, 'hunter22-board', { context: 'vault' })).toEqual({ a: 1 })
   })
 
   it('cannot be downgraded to the legacy format', async () => {
-    const packet: PacketV2 = await sealJson({ a: 1 }, 'hunter22', { iterations: 120_000 })
+    const packet: PacketV2 = await sealJson({ a: 1 }, 'hunter22-board', { iterations: 120_000 })
     const downgraded = { version: '1.0', salt: packet.salt, iv: packet.iv, ciphertext: packet.ciphertext }
-    await expectCode(openJson(downgraded, 'hunter22'), 'decrypt-failed')
+    await expectCode(openJson(downgraded, 'hunter22-board'), 'decrypt-failed')
   })
 
   it('refuses weak passphrases when sealing', async () => {
     await expectCode(sealJson({}, 'short'), 'weak-passphrase')
+    await expectCode(sealJson({}, 'elevenchars'), 'weak-passphrase') // 11 < 12
   })
 
   it('bounds the iteration count read from untrusted packets', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', FAST)
-    await expectCode(openJson({ ...packet, iterations: 1_000_000_000 }, 'hunter22'), 'unsupported-version')
-    await expectCode(openJson({ ...packet, iterations: 1 }, 'hunter22'), 'unsupported-version')
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', FAST)
+    await expectCode(openJson({ ...packet, iterations: 1_000_000_000 }, 'hunter22-board'), 'unsupported-version')
+    await expectCode(openJson({ ...packet, iterations: 1 }, 'hunter22-board'), 'unsupported-version')
   })
 
   it('validates structure, lengths and versions', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', FAST)
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', FAST)
     expect(() => parsePacket(null)).toThrow(PacketError)
     expect(() => parsePacket({ ...packet, version: '3' })).toThrow(/unsupported/)
     expect(() => parsePacket({ ...packet, kdf: 'MD5' })).toThrow(/KDF/)
-    await expectCode(openJson({ ...packet, iv: bytesToBase64Url(new Uint8Array(8)) }, 'hunter22'), 'malformed')
-    await expectCode(openJson({ ...packet, salt: 'not base64!' }, 'hunter22'), 'malformed')
+    await expectCode(openJson({ ...packet, iv: bytesToBase64Url(new Uint8Array(8)) }, 'hunter22-board'), 'malformed')
+    await expectCode(openJson({ ...packet, salt: 'not base64!' }, 'hunter22-board'), 'malformed')
   })
 
   it('hashToPacket never throws on junk', () => {
@@ -161,7 +196,7 @@ describe('v2 packets', () => {
   })
 
   it('uses distinct hash prefixes', async () => {
-    const packet = await sealJson({ a: 1 }, 'hunter22', { ...FAST, context: 'vault' })
+    const packet = await sealJson({ a: 1 }, 'hunter22-board', { ...FAST, context: 'vault' })
     const hash = packetToHash(packet, 'vault')
     expect(hash.startsWith('#vault=')).toBe(true)
     expect(hashToPacket(hash, 'vault')).toEqual(packet)

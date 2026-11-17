@@ -70,6 +70,16 @@ export function createSupabaseChatTransport(supabase: SupabaseClient, userId: st
       if (error) fail(error)
     },
 
+    async revokeDevice(deviceId) {
+      const { error } = await supabase
+        .from('chat_devices')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('device_id', deviceId)
+        .eq('user_id', userId)
+        .is('revoked_at', null)
+      if (error) fail(error)
+    },
+
     async listDevices(userIds) {
       if (!userIds.length) return []
       const { data, error } = await supabase
