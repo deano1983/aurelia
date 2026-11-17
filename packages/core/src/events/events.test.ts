@@ -187,6 +187,29 @@ describe('event bus', () => {
     expect(Date.parse(recent[0].ts)).toBeGreaterThan(Date.parse(recent[19].ts))
   })
 
+  it('rejects prototype keys in payloads', () => {
+    const forged = JSON.parse(
+      `{"v":1,"id":"abcdefgh-2","type":"invoice.tier_selected","source":"06","ts":"${new Date().toISOString()}","payload":{"tierId":"pro","__proto__":{"admin":true}}}`,
+    )
+    expect(validateEnvelope(forged)).toMatch(/forbidden key/)
+  })
+
+  it('rate-limits a flood of live events per type (excess stays in the outbox)', async () => {
+    const a06 = app('06')
+    const a01 = app('01')
+    const h = vi.fn()
+    a01.on('invoice.due_set', h)
+    for (let i = 0; i < 30; i++) a06.emit('invoice.due_set', { dueDate: '2026-12-01', invoiceNumber: `INV-${i}` })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(h).toHaveBeenCalledTimes(20) // live delivery stops at the limit
+    const warns = (console.warn as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]))
+    expect(warns.some((w) => w.includes('rate limit'))).toBe(true)
+    await a06.flush()
+    await a01.replay()
+    expect(h).toHaveBeenCalledTimes(30) // the rest arrive from the outbox, once each
+  })
+
   it('is a graceful no-op without BroadcastChannel, IndexedDB or storage', async () => {
     const bus = new EventBus({ appId: '06', BroadcastChannel: null, indexedDB: null, storage: null })
     buses.push(bus)

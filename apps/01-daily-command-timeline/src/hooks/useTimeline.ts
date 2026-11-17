@@ -32,6 +32,15 @@ export function useTimeline() {
     setItems((prev) => upsertExternalItem(prev, item))
   }, [])
 
+  /** Undo a bus change: put `before` back, or drop the item if the event added it. */
+  const restoreExternal = useCallback((externalKey: string, before: TimelineItem | null) => {
+    setItems((prev) =>
+      before
+        ? prev.map((i) => (i.externalKey === externalKey ? before : i))
+        : prev.filter((i) => i.externalKey !== externalKey),
+    )
+  }, [])
+
   const toggleItem = useCallback((id: string) => {
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, completed: !i.completed } : i)),
@@ -71,6 +80,7 @@ export function useTimeline() {
     removeItem,
     updateItem,
     upsertExternal,
+    restoreExternal,
     CATEGORIES,
     TAGS,
     SLOTS,

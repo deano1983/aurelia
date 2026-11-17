@@ -32,6 +32,19 @@ export function createEnvelope<T extends EventType>(type: T, payload: EventPaylo
   return { v: 1, id: newEventId(), type, source, ts: new Date().toISOString(), payload }
 }
 
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+/** Prototype-pollution guard: true when any nested own key is __proto__/constructor/prototype. */
+export function hasForbiddenKey(value: unknown, depth = 0): boolean {
+  if (typeof value !== 'object' || value === null) return false
+  if (depth > 8) return true
+  for (const key of Object.keys(value)) {
+    if (FORBIDDEN_KEYS.has(key)) return true
+    if (hasForbiddenKey((value as Record<string, unknown>)[key], depth + 1)) return true
+  }
+  return false
+}
+
 /** Returns null when the value is a valid envelope, or a short reason. */
 export function validateEnvelope(value: unknown): string | null {
   if (typeof value !== 'object' || value === null) return 'not an object'
@@ -49,6 +62,7 @@ export function validateEnvelope(value: unknown): string | null {
     return 'payload not serialisable'
   }
   if (size > MAX_PAYLOAD_BYTES) return 'payload too large'
+  if (hasForbiddenKey(e.payload)) return 'payload has a forbidden key'
   const reason = validatePayload(e.type, e.payload)
   return reason ? `${e.type}: ${reason}` : null
 }

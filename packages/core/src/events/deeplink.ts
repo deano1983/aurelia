@@ -106,9 +106,11 @@ function folderFromPath(pathname: string): string | null {
 }
 
 function collect(search: URLSearchParams): Pick<ParsedDeepLink, 'params' | 'all'> {
-  const params: Record<string, string> = {}
-  const all: Record<string, string[]> = {}
+  // Null-prototype maps, and prototype keys dropped: a link can never reach Object.prototype.
+  const params: Record<string, string> = Object.create(null)
+  const all: Record<string, string[]> = Object.create(null)
   search.forEach((value, key) => {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') return
     if (!(key in params)) params[key] = value
     ;(all[key] ??= []).push(value)
   })

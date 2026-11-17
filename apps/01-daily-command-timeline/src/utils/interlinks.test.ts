@@ -126,7 +126,17 @@ describe('07 inbox', () => {
       kind: 'rate-card',
       source: '05',
       payload: { creator: 'Ava' },
+      trust: 'link',
     })
+    expect(entry.trust).toBe('bus')
     expect(parseInboundDeepLink('#affiliate/inbox?kind=evil&source=05')).toBeNull()
+    expect(parseInboundDeepLink('#affiliate/inbox?kind=rate-card&source=99')).toBeNull()
+    // Unknown fields are dropped, control characters removed, lengths capped.
+    const hostile = parseInboundDeepLink(
+      `#affiliate/inbox?kind=linkedin-draft&source=04&draft=${'x'.repeat(6000)}%0D&bsb=000-000&__proto__=1`,
+    )!
+    expect(Object.keys(hostile.payload)).toEqual(['draft'])
+    expect(hostile.payload.draft).toHaveLength(5000)
+    expect(hostile.trust).toBe('link')
   })
 })

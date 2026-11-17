@@ -44,6 +44,9 @@ const STORAGE_BUS_KEY = 'aurelia.events.bus'
 const CURSOR_SEEN_MAX = 500
 /** Events up to this much older than the cursor are still replayed if not seen. */
 const CURSOR_SKEW_MS = 60_000
+/** Live events accepted per type per window; the rest are dropped (they stay in the outbox). */
+export const RATE_LIMIT_COUNT = 20
+export const RATE_LIMIT_WINDOW_MS = 10_000
 
 export const cursorKey = (appId: AppId) => `aurelia.${appId}.events.cursor`
 
@@ -121,6 +124,7 @@ export class EventBus {
     }
   }
   private closed = false
+  private readonly rate = new Map<string, number[]>()
 
   constructor(opts: EventBusOptions) {
     this.appId = opts.appId
@@ -217,6 +221,10 @@ export class EventBus {
       return
     }
     const event = data as AnyAureliaEvent
+    if (origin === 'live' && this.rateLimited(event.type)) {
+      warnOnce(`rate limit exceeded for ${event.type}`)
+      return
+    }
 
     if (origin !== 'outbox' && !this.anyDelivered.has(event.id)) {
       this.anyDelivered.add(event.id)
@@ -248,6 +256,14 @@ export class EventBus {
       }
     }
     if (ok) this.ack(event)
+  }
+
+  private rateLimited(type: string): boolean {
+    const now = Date.now()
+    const recent = (this.rate.get(type) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+    recent.push(now)
+    this.rate.set(type, recent)
+    return recent.length > RATE_LIMIT_COUNT
   }
 
   /** Mark an event as handled by this app (per-app cursor in localStorage). */

@@ -55,6 +55,12 @@ describe('deep links', () => {
       '/apps/07-distribution-affiliate-engine/#affiliate/inbox?kind=rate-card&source=05',
     )
     expect(resolveHubDeepLink('#unknown/thing')).toBeNull()
+  })
+
+  it('never lets a link reach Object.prototype', () => {
+    const p = parseDeepLink('#timeline/add?__proto__=x&constructor=y&prototype=z&title=t')!
+    expect(Object.keys(p.params)).toEqual(['title'])
+    expect(({} as Record<string, unknown>).x).toBeUndefined()
     expect(resolveHubDeepLink('#//evil.example')).toBeNull()
   })
 })

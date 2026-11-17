@@ -32,9 +32,15 @@ export function DeepLinkInbox({ link, onAccept, onDismiss }: DeepLinkInboxProps)
           </div>
           <h2 className="text-xl font-bold text-slate-900">Incoming Partner Payload</h2>
         </div>
-        <p className="text-slate-600 mb-6">
-          A payload was shared from another Aurelia OS app. Apply it to your affiliate engine?
-        </p>
+        <div role="alert" className="mb-4 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm">
+          <p className="font-semibold">Unverified link</p>
+          <p>
+            Anyone can create a link like this, so it may not really come from{' '}
+            {sourceLabel[source] ?? source}. Read the text below before you apply it: nothing is
+            added to your pitches until you do.
+          </p>
+        </div>
+        <p className="text-slate-600 mb-6">Apply this payload to your affiliate engine?</p>
         <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">
             Source
@@ -65,7 +71,7 @@ export function DeepLinkInbox({ link, onAccept, onDismiss }: DeepLinkInboxProps)
             }}
             className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-colors"
           >
-            Apply to affiliate engine
+            I have checked it: apply
           </button>
           <button
             onClick={onDismiss}
@@ -108,7 +114,9 @@ export function InboxList({ entries, onApply, onDismiss }: InboxListProps) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-800">
                 {kindLabel[entry.kind] ?? entry.kind}
-                <span className="ml-2 text-xs font-normal text-slate-500">from {sourceLabel[entry.source] ?? entry.source}</span>
+                <span className="ml-2 text-xs font-normal text-slate-500">
+                  from {sourceLabel[entry.source] ?? entry.source} · unverified
+                </span>
               </p>
               <p className="text-xs text-slate-600 break-words">{summary(entry)}</p>
             </div>

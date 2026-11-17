@@ -14,12 +14,18 @@ function AppShell() {
   const [deepLinkTarget, setDeepLinkTarget] = useState<string | null>(null)
 
   useEffect(() => {
-    const hash = window.location.hash
-    // Any deep link meant for an app (#ctl=, #vault=, #timeline/add?…, …) is routed there.
-    if (hubDeepLinkTarget(hash)) {
-      setActiveSection('deep-link')
-      setDeepLinkTarget(hash.slice(1))
+    // Any deep link meant for an app (#ctl=, #vault=, #timeline/add?…, …) is routed there,
+    // whether it was in the URL at load or pasted while the hub is open.
+    const check = () => {
+      const hash = window.location.hash
+      if (hubDeepLinkTarget(hash)) {
+        setActiveSection('deep-link')
+        setDeepLinkTarget(hash.slice(1))
+      }
     }
+    check()
+    window.addEventListener('hashchange', check)
+    return () => window.removeEventListener('hashchange', check)
   }, [])
 
   const { session, logout } = useSession()

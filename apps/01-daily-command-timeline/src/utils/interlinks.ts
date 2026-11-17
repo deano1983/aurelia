@@ -27,7 +27,7 @@ export function deadlineFromInvoice(event: AureliaEvent<'invoice.due_set'>): Ext
   const { dueDate, invoiceNumber, amountAud } = event.payload
   return {
     externalKey: `invoice:${invoiceNumber}`,
-    title: `Tax invoice ${invoiceNumber} due`,
+    title: `Tax invoice ${cleanText(invoiceNumber, 64)} due`,
     category: 'board',
     tags: ['hard-report-deadline'],
     dueDate,
@@ -47,8 +47,14 @@ function splitDue(due: string): { dueDate: string; dueTime?: string } {
   }
 }
 
+/** Bus text is untrusted too: drop control characters and cap the length. */
+function cleanText(value: string, max: number): string {
+  return value.replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, max)
+}
+
 export function deadlineFromRequest(event: AureliaEvent<'timeline.deadline_requested'>): ExternalDeadline {
-  const { title, category, tags, due } = event.payload
+  const { category, tags, due } = event.payload
+  const title = cleanText(event.payload.title, 200)
   const { dueDate, dueTime } = splitDue(due)
   return {
     externalKey: `request:${event.source}:${title}:${due}`,

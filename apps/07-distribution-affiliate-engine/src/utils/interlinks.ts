@@ -62,6 +62,17 @@ export function traceInterlink(target: string, event: string, payload: unknown):
 
 const KINDS: DeepLinkKind[] = ['linkedin-draft', 'rate-card', 'tier-attribution']
 const SOURCES: DeepLinkSource[] = ['03', '04', '05', '06']
+/** Fields an inbound link may carry, with their maximum length. */
+const INBOUND_FIELDS: Record<string, number> = {
+  draft: 5000,
+  channel: 64,
+  creator: 120,
+  partnerId: 64,
+  tierId: 64,
+  tier: 64,
+  rateAud: 16,
+  audience: 64,
+}
 
 /**
  * Parse an inbound affiliate deep link from the current URL hash.
@@ -72,13 +83,24 @@ export function parseInboundDeepLink(hash: string = window.location.hash): Inbou
   const link = parseDeepLink(hash)
   if (!link || link.kind !== 'affiliate/inbox') return null
 
-  const { kind, source, ...payload } = link.params
+  const { kind, source, ...raw } = link.params
   if (!KINDS.includes(kind as DeepLinkKind) || !SOURCES.includes(source as DeepLinkSource)) return null
+
+  // Anyone can craft this URL: keep only known fields, cap their length and
+  // drop control characters. The result is marked untrusted ('link').
+  const payload: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    const max = INBOUND_FIELDS[key]
+    if (!max) continue
+    const clean = value.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, '').trim().slice(0, max)
+    if (clean) payload[key] = clean
+  }
 
   return {
     kind: kind as DeepLinkKind,
     source: source as DeepLinkSource,
     payload,
+    trust: 'link',
   }
 }
 
@@ -89,11 +111,6 @@ export function buildTimelinePayoutUrl(params: {
   desc?: string
   tags?: string[]
 }): string {
-  const search = new URLSearchParams()
-  search.set('title', params.title)
-  search.set('due', params.due)
-  if (params.desc) search.set('desc', params.desc)
-  params.tags?.forEach((tag) => search.append('tags', tag))
   return buildDeepLink(TIMELINE_APP_FOLDER, 'timeline/add', {
     title: params.title,
     due: params.due,
@@ -128,7 +145,7 @@ const INBOX_MAX = 50
 
 /** Turn a bus event into an inbox entry (null for events 07 does not file). */
 export function inboxEntryFromEvent(event: AnyAureliaEvent): InboxEntry | null {
-  const base = { id: event.id, receivedAt: event.ts }
+  const base = { id: event.id, receivedAt: event.ts, trust: 'bus' as const }
   switch (event.type) {
     case 'invoice.tier_selected':
       return {
