@@ -4,6 +4,7 @@ import type { StreakStats } from '../types';
 import { formatAUD } from '../utils/audMoney';
 import { engagementRatePercent } from '../utils/engagementRate';
 import { SPONSORSHIP_TIERS } from '../utils/sponsorshipTier';
+import ShareMediaKitButton from './ShareMediaKitButton';
 
 interface MediaKitExportProps {
   profile: CreatorProfile;
@@ -19,12 +20,15 @@ export default function MediaKitExport({ profile, stats, totalCents }: MediaKitE
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Media Kit / Rate Card Export</h2>
-        <button
-          onClick={handlePrint}
-          className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-glowgrid-primary"
-        >
-          🖨️ Print / Save as PDF
-        </button>
+        <div className="no-print flex flex-wrap items-center gap-2">
+          <ShareMediaKitButton profile={profile} stats={stats} totalCents={totalCents} />
+          <button
+            onClick={handlePrint}
+            className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-glowgrid-primary"
+          >
+            🖨️ Print / Save as PDF
+          </button>
+        </div>
       </div>
 
       <div className="no-print mb-6 text-sm text-gray-500">
