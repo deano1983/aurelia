@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import { useCallback } from 'react'
 import type { Invoice } from '../types'
 import { centsToAud } from '../utils/currency'
