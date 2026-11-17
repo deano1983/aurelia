@@ -42,6 +42,18 @@ export function LinkPointerButton({
       setMessage('Provider, pointer name and remote file ID are required.')
       return
     }
+    if (webViewUrl) {
+      let parsed: URL | null = null
+      try {
+        parsed = new URL(webViewUrl)
+      } catch {
+        parsed = null
+      }
+      if (!parsed || parsed.protocol !== 'https:') {
+        setMessage('Web view URL must be an https:// link.')
+        return
+      }
+    }
     setSubmitting(true)
     setMessage(null)
     try {
@@ -59,11 +71,19 @@ export function LinkPointerButton({
       let pointer: CloudPointer = { ...base, sizeBytes }
       if (seal && passphrase) {
         const sealed = await encryptPointer(pointer, passphrase)
+        // Store ONLY the ciphertext: name, fileId and webViewUrl live inside
+        // `sealed` and are not kept in plaintext beside it.
         pointer = {
-          ...pointer,
+          id: pointer.id,
+          provider: pointer.provider,
+          name: 'Sealed pointer',
+          fileId: '',
           encrypted: true,
           sealed,
           sealedUrl: pointerToUrlHash(sealed),
+          sizeBytes: 0,
+          createdAt: pointer.createdAt,
+          updatedAt: pointer.updatedAt,
         }
         pointer = {
           ...pointer,

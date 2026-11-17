@@ -58,8 +58,8 @@ export default function App() {
 
   const handleSendToCtl = useCallback(async () => {
     if (!selectedDraft) return
-    if (!passphrase || passphrase.length < 6) {
-      setLinkError('Set a shared passphrase (min 6 chars) to seal the CTL packet.')
+    if (!passphrase || passphrase.length < 12) {
+      setLinkError('Set a shared passphrase (min 12 chars) to seal the CTL packet.')
       return
     }
     setStatus('sending')
@@ -227,12 +227,12 @@ export default function App() {
                   value={passphrase}
                   onChange={(e) => setPassphrase(e.target.value)}
                   type="password"
-                  placeholder="Shared passphrase (min 6 chars)"
+                  placeholder="Shared passphrase (min 12 chars)"
                   className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500/50 w-full"
                 />
                 <button
                   onClick={handleSendToCtl}
-                  disabled={!canSend || !passphrase || passphrase.length < 6}
+                  disabled={!canSend || !passphrase || passphrase.length < 12}
                   className={`w-full py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 ${
                     canSend && passphrase.length >= 6
                       ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-600/30'
