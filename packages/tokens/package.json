@@ -1,0 +1,7 @@
+{
+  "name": "@aurelia/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aurelia design tokens: Tailwind preset + CSS variables",
+  "main": "index.cjs"
+}

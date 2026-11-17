@@ -2,11 +2,30 @@
   "name": "aurelia",
   "private": true,
   "description": "Aurelia OS: the central hub and its seven apps, in one workspace",
-  "workspaces": ["apps/*", "packages/*"],
-  "engines": { "node": ">=20" },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "build:site": "node scripts/assemble.mjs",
-    "dev:hub": "npm run dev -w central-hub"
+    "dev:hub": "npm run dev -w central-hub",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "fake-indexeddb": "^6.2.8",
+    "globals": "^15.15.0",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^3.2.7"
   }
 }

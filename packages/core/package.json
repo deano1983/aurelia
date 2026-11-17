@@ -1,0 +1,17 @@
+{
+  "name": "@aurelia/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Aurelia runtime: auth, crypto, events, manifests, sharing",
+  "exports": {
+    "./auth": "./src/auth/index.ts",
+    "./crypto": "./src/crypto/index.ts",
+    "./events": "./src/events/index.ts",
+    "./manifest": "./src/manifest/index.ts",
+    "./share": "./src/share/index.ts",
+    "./chat": "./src/chat/index.ts"
+  },
+  "scripts": { "test": "vitest run" },
+  "peerDependencies": { "react": "^18" }
+}
