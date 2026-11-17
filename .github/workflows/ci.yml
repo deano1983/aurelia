@@ -20,6 +20,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Validate app manifests
+        run: npm run check:manifests
       - name: Typecheck and build all eight apps for one origin
         run: npm run build:site
       - uses: actions/upload-artifact@v4

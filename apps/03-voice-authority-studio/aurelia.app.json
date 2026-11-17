@@ -1,0 +1,33 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "03",
+  "slug": "voice-authority-studio",
+  "folder": "03-voice-authority-studio",
+  "name": "Voice-to-Authority Studio",
+  "shortName": "Voice Studio",
+  "tagline": "90-sec voice note → 3 LinkedIn draft options",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "🎙️",
+  "accent": "violet",
+  "route": "/apps/03-voice-authority-studio/",
+  "nativeId": "com.aurelia.os.voicestudio",
+  "emits": [
+    "voice.draft_sealed",
+    "voice.draft_ready"
+  ],
+  "accepts": [
+    "vault.pointer_created",
+    "hub.session_changed"
+  ],
+  "deepLinks": [],
+  "storageKeys": [],
+  "dependencies": [
+    "02",
+    "04",
+    "07"
+  ],
+  "notes": "Builds #ctl= links for 04; it does not handle any hash itself. No persistent storage yet."
+}

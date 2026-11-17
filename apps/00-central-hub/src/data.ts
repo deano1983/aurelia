@@ -1,74 +1,75 @@
+// The hub's app registry, built at build time from every
+// apps/<folder>/aurelia.app.json plus the root registry.external.json.
+// To add or change an app, edit its manifest; nothing here is hand-listed.
+import {
+  validateManifest,
+  resolveManifest,
+  type Accent,
+  type AppManifest,
+  type ResolvedManifest,
+} from '../../../packages/core/src/manifest/index.ts'
+import externalRegistry from '../../../registry.external.json'
 import type { AppModule } from './types'
 
-export const APPS: AppModule[] = [
-  {
-    id: '01-timeline',
-    name: 'Daily Command Timeline',
-    tagline: 'Deadlines, publishing slots, .ics export',
-    route: '/apps/01-daily-command-timeline',
-    icon: '📅',
-    color: 'bg-blue-100 text-blue-700 border-blue-200',
-    status: 'active',
-    dependencies: ['06-invoice', '07-affiliate'],
-  },
-  {
-    id: '02-vault',
-    name: 'Cross-Cloud Asset Vault',
-    tagline: 'Zero-blob pointers, $0 egress, iCloud/OneDrive/GDrive',
-    route: '/apps/02-cross-cloud-asset-vault',
-    icon: '☁️',
-    color: 'bg-slate-100 text-slate-700 border-slate-200',
-    status: 'active',
-    dependencies: ['03-voice', '04-ctl'],
-  },
-  {
-    id: '03-voice',
-    name: 'Voice-to-Authority Studio',
-    tagline: '90-sec voice note → 3 LinkedIn draft options',
-    route: '/apps/03-voice-authority-studio',
-    icon: '🎙️',
-    color: 'bg-purple-100 text-purple-700 border-purple-200',
-    status: 'active',
-    dependencies: ['02-vault', '04-ctl', '07-affiliate'],
-  },
-  {
-    id: '04-ctl',
-    name: 'C.T.L. Encrypted Relay',
-    tagline: 'AES-256-GCM interoffice approval, #ctl= deep links',
-    route: '/apps/04-ctl-encrypted-relay',
-    icon: '🔒',
-    color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    status: 'active',
-    dependencies: ['02-vault', '03-voice'],
-  },
-  {
-    id: '05-glowgrid',
-    name: 'GlowGrid Creator Radar',
-    tagline: 'Streak tracking, AUD rate-card calculator',
-    route: '/apps/05-glowgrid-creator-radar',
-    icon: '📊',
-    color: 'bg-pink-100 text-pink-700 border-pink-200',
-    status: 'active',
-    dependencies: ['07-affiliate', '03-voice'],
-  },
-  {
-    id: '06-invoice',
-    name: 'Expense & Tax Invoice',
-    tagline: 'Australian Tax Invoice, ABN, finance approval memo',
-    route: '/apps/06-expense-tax-invoice',
-    icon: '🧾',
-    color: 'bg-amber-100 text-amber-700 border-amber-200',
-    status: 'active',
-    dependencies: ['01-timeline', '07-affiliate'],
-  },
-  {
-    id: '07-affiliate',
-    name: 'Distribution Affiliate Engine',
-    tagline: '30–35% recurring, partner pitches, 2-tap close',
-    route: '/apps/07-distribution-affiliate-engine',
-    icon: '🤝',
-    color: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    status: 'active',
-    dependencies: ['03-voice', '04-ctl', '05-glowgrid', '06-invoice'],
-  },
-]
+const manifestFiles = import.meta.glob<AppManifest>('../../*/aurelia.app.json', {
+  eager: true,
+  import: 'default',
+})
+
+// Literal class strings so Tailwind's content scan keeps them.
+export const ACCENT_CLASSES: Record<Accent, string> = {
+  cyan: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+  violet: 'bg-violet-50 text-violet-800 border-violet-200',
+  emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  pink: 'bg-pink-50 text-pink-800 border-pink-200',
+  gold: 'bg-amber-50 text-amber-800 border-amber-200',
+}
+
+function load(entries: [string, unknown][]): ResolvedManifest[] {
+  const out: ResolvedManifest[] = []
+  for (const [where, manifest] of entries) {
+    const { errors } = validateManifest(manifest, where)
+    if (errors.length) {
+      // CI (npm run check:manifests) blocks this; never break the hub over it.
+      console.warn(`[aurelia] skipping invalid manifest`, errors)
+      continue
+    }
+    out.push(resolveManifest(manifest as AppManifest))
+  }
+  return out
+}
+
+/** Every manifest, hub included, internal apps first then external, by id. */
+export const MANIFESTS: ResolvedManifest[] = [
+  ...load(Object.entries(manifestFiles)).filter((m) => m.kind === 'internal'),
+  ...load((externalRegistry as unknown[]).map((m, i) => [`registry.external.json[${i}]`, m])).filter(
+    (m) => m.kind === 'external',
+  ),
+].sort((a, b) => (a.kind === b.kind ? a.id.localeCompare(b.id) : a.kind === 'internal' ? -1 : 1))
+
+export function toAppModule(m: ResolvedManifest): AppModule {
+  return {
+    id: m.id,
+    folder: m.folder,
+    name: m.name,
+    shortName: m.shortName,
+    tagline: m.tagline,
+    route: m.href,
+    icon: m.emoji ?? m.name.slice(0, 1),
+    iconPath: m.icon && m.kind === 'internal' ? `${m.route}${m.icon}` : undefined,
+    color: ACCENT_CLASSES[m.accent],
+    accent: m.accent,
+    status: m.status,
+    kind: m.kind,
+    nativeId: m.nativeId,
+    dependencies: m.dependencies,
+  }
+}
+
+/** The hub itself (id 00). */
+export const HUB: AppModule | undefined = MANIFESTS.filter((m) => m.id === '00').map(toAppModule)[0]
+
+/** Cards on the hub grid: the seven internal apps, then any external sites. */
+export const APPS: AppModule[] = MANIFESTS.filter((m) => m.id !== '00').map(toAppModule)
+
+export const EXTERNAL_APPS: AppModule[] = APPS.filter((a) => a.kind === 'external')

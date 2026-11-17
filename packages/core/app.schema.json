@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aurelia.os/schemas/app.schema.json",
+  "title": "Aurelia app manifest (aurelia.app.json)",
+  "description": "One per app folder (apps/<folder>/aurelia.app.json), or one entry per external site in the root registry.external.json. The hand-written validator in packages/core/src/manifest (validateManifest) enforces this schema plus the cross-field rules noted in each description; scripts/check-manifests.mjs runs it in CI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "slug", "folder", "name", "tagline", "version", "status", "accent"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": {
+      "type": "string",
+      "pattern": "^\\d\\d$",
+      "description": "Two-digit app number, e.g. \"04\". Internal apps use 00-49, external sites 50-99."
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "The folder name without its number prefix."
+    },
+    "folder": {
+      "type": "string",
+      "pattern": "^\\d\\d-[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Must equal <id>-<slug>. For internal apps it is the folder under apps/."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "shortName": { "type": "string", "minLength": 1, "description": "Optional short label (Download Center, home-screen name)." },
+    "tagline": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" },
+    "status": { "enum": ["active", "planned"] },
+    "kind": { "enum": ["internal", "external"], "default": "internal" },
+    "url": {
+      "type": "string",
+      "pattern": "^https://",
+      "description": "Required for kind external; not allowed for internal apps."
+    },
+    "icon": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*\\.(png|svg|webp|ico)$",
+      "description": "Path relative to the app's public/ folder. Required for internal apps."
+    },
+    "emoji": { "type": "string", "minLength": 1, "maxLength": 16, "description": "Optional glyph shown on hub cards." },
+    "accent": { "enum": ["cyan", "violet", "emerald", "pink", "gold"] },
+    "route": {
+      "type": "string",
+      "pattern": "^/(apps/\\d\\d-[a-z0-9-]+/)?$",
+      "description": "Internal apps: /apps/<folder>/ (the hub, 00, is /). Required for internal, not allowed for external."
+    },
+    "nativeId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "description": "Capacitor appId from capacitor.config.ts. Required for internal apps."
+    },
+    "emits": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": { "type": "string", "pattern": "^[a-z]+\\.[a-z_]+$" },
+      "description": "Event names from EVENT_CATALOG this app publishes."
+    },
+    "accepts": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": { "type": "string", "pattern": "^[a-z]+\\.[a-z_]+$" },
+      "description": "Event names from EVENT_CATALOG this app subscribes to."
+    },
+    "deepLinks": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": { "type": "string", "pattern": "^[^#\\s]{2,}$" },
+      "description": "Hash prefixes this app handles, without the leading '#', e.g. \"ctl=\"."
+    },
+    "storageKeys": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": { "type": "string", "minLength": 1 },
+      "description": "localStorage keys and IndexedDB names the app owns. Each must start with aurelia.<id>. Keys allow-listed in LEGACY_STORAGE_KEYS only warn until migrated."
+    },
+    "dependencies": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": { "type": "string", "pattern": "^\\d\\d$" },
+      "description": "Ids of other apps this one links to or exchanges events with."
+    },
+    "notes": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "external" } }, "required": ["kind"] },
+      "then": { "required": ["url"], "not": { "anyOf": [{ "required": ["route"] }, { "required": ["nativeId"] }] } },
+      "else": { "required": ["icon", "route", "nativeId"], "not": { "required": ["url"] } }
+    }
+  ]
+}

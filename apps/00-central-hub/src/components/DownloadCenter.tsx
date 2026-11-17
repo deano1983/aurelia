@@ -1,28 +1,13 @@
 import { useState } from 'react'
+import { APPS, HUB } from '../data'
+import type { AppModule } from '../types'
 
-type AppDownload = {
-  id: string
-  folder: string
-  appId: string
-  name: string
-  shortName: string
-  port: number
-  icon: string
-}
-
-const APPS_DOWNLOAD: AppDownload[] = [
-  { id: '00-hub', folder: '00-central-hub', appId: 'com.aurelia.os.centralhub', name: 'Aurelia OS — Central Hub', shortName: 'Central Hub', port: 5173, icon: '🏛️' },
-  { id: '04-ctl', folder: '04-ctl-encrypted-relay', appId: 'com.aurelia.os.ctlrelay', name: 'C.T.L. Encrypted Relay', shortName: 'CTL Relay', port: 5174, icon: '🔒' },
-  { id: '01-timeline', folder: '01-daily-command-timeline', appId: 'com.aurelia.os.timeline', name: 'Daily Command Timeline', shortName: 'Timeline', port: 5175, icon: '📅' },
-  { id: '02-vault', folder: '02-cross-cloud-asset-vault', appId: 'com.aurelia.os.assetvault', name: 'Cross-Cloud Asset Vault', shortName: 'Asset Vault', port: 5176, icon: '☁️' },
-  { id: '03-voice', folder: '03-voice-authority-studio', appId: 'com.aurelia.os.voicestudio', name: 'Voice-to-Authority Studio', shortName: 'Voice Studio', port: 5177, icon: '🎙️' },
-  { id: '07-affiliate', folder: '07-distribution-affiliate-engine', appId: 'com.aurelia.os.affiliate', name: 'Distribution Affiliate Engine', shortName: 'Affiliate Engine', port: 5178, icon: '🤝' },
-  { id: '05-glowgrid', folder: '05-glowgrid-creator-radar', appId: 'com.aurelia.os.glowgrid', name: 'GlowGrid Creator Radar', shortName: 'GlowGrid', port: 5179, icon: '📊' },
-  { id: '06-invoice', folder: '06-expense-tax-invoice', appId: 'com.aurelia.os.taxinvoice', name: 'Expense & Tax Invoice', shortName: 'Tax Invoice', port: 5180, icon: '🧾' },
-]
+// From the manifest registry: the hub and the seven internal apps (external
+// sites have no PWA/APK of ours to install).
+const APPS_DOWNLOAD: AppModule[] = [...(HUB ? [HUB] : []), ...APPS.filter((a) => a.kind === 'internal')]
 
 export function DownloadCenter() {
-  const [selectedModal, setSelectedModal] = useState<{ app: AppDownload; platform: 'apk' | 'ios' } | null>(null)
+  const [selectedModal, setSelectedModal] = useState<{ app: AppModule; platform: 'apk' | 'ios' } | null>(null)
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null)
 
   const copyText = (text: string) => {
@@ -98,11 +83,11 @@ export function DownloadCenter() {
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-slate-900">{app.name}</h3>
-                <p className="text-xs font-mono text-slate-500">{app.appId} · /{app.folder}</p>
+                <p className="text-xs font-mono text-slate-500">{app.nativeId} · /{app.folder}</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <a
-                  href={`http://localhost:${app.port}`}
+                  href={app.route}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl text-center transition-colors"
@@ -163,7 +148,7 @@ export function DownloadCenter() {
               ) : (
                 <div className="space-y-4 text-sm text-slate-700">
                   <p>
-                    <strong>1. Instant iOS WebApp:</strong> Open <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs">http://localhost:{selectedModal.app.port}</code> in Safari → Tap <strong>Share</strong> → <strong>Add to Home Screen</strong>.
+                    <strong>1. Instant iOS WebApp:</strong> Open <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs">{window.location.origin}{selectedModal.app.route}</code> in Safari → Tap <strong>Share</strong> → <strong>Add to Home Screen</strong>.
                   </p>
                   <p>
                     <strong>2. Xcode Native App:</strong> Pre-generated at <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs">{selectedModal.app.folder}/ios/App</code>.

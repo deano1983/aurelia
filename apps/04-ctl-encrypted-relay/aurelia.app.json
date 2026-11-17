@@ -1,0 +1,34 @@
+{
+  "$schema": "../../packages/core/app.schema.json",
+  "id": "04",
+  "slug": "ctl-encrypted-relay",
+  "folder": "04-ctl-encrypted-relay",
+  "name": "C.T.L. Encrypted Relay",
+  "shortName": "CTL Relay",
+  "tagline": "AES-256-GCM interoffice approval, #ctl= deep links",
+  "version": "0.1.0",
+  "status": "active",
+  "kind": "internal",
+  "icon": "pwa-192x192.png",
+  "emoji": "🔒",
+  "accent": "emerald",
+  "route": "/apps/04-ctl-encrypted-relay/",
+  "nativeId": "com.aurelia.os.ctlrelay",
+  "emits": [
+    "chat.message_received"
+  ],
+  "accepts": [
+    "vault.pointer_created",
+    "voice.draft_sealed",
+    "hub.session_changed"
+  ],
+  "deepLinks": [
+    "ctl="
+  ],
+  "storageKeys": [],
+  "dependencies": [
+    "02",
+    "03"
+  ],
+  "notes": "No persistent storage yet."
+}
