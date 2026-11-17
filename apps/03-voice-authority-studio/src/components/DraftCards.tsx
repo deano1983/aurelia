@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import type { Draft } from '../types'
 import { STYLE_LABEL } from '../types'
+import { SharePostButton } from './SharePostButton'
 
 interface DraftCardsProps {
   drafts: Draft[]
@@ -77,12 +78,15 @@ export function DraftCards({
                 <span className="text-[10px] text-slate-400">
                   {draft.body.length} characters
                 </span>
-                <button
-                  onClick={(e) => handleCopy(draft.id, e)}
-                  className="text-xs font-semibold text-violet-600 hover:text-violet-800 underline underline-offset-2"
-                >
-                  Copy draft
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={(e) => handleCopy(draft.id, e)}
+                    className="text-xs font-semibold text-violet-600 hover:text-violet-800 underline underline-offset-2"
+                  >
+                    Copy draft
+                  </button>
+                  <SharePostButton draft={draft} />
+                </div>
               </div>
             </div>
           )

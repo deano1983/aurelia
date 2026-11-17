@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { DistributionChannel, PitchHistory } from '../types'
 import { CopyButton } from './CopyButton'
+import { SharePitchButton } from './SharePitchButton'
 import { channelLabel } from '../utils/commissionCalc'
 import { loadJSON, saveJSON, STORAGE_KEYS } from '../utils/storage'
 
@@ -164,6 +165,7 @@ export function PitchTemplates({
           >
             📤 2-Tap Native Handoff Close
           </button>
+          <SharePitchButton subject={rendered().subject} body={rendered().body} />
           <p className="text-xs text-slate-400">
             Copies the pitch, then opens your mail client to send.
           </p>

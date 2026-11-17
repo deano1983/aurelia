@@ -7,6 +7,8 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    // ShareSheet (@aurelia/core/share) ships Tailwind classes
+    "../../packages/core/src/share/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
